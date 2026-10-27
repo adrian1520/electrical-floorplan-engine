@@ -96,7 +96,7 @@ def test_backend_lists_projects_serves_editor_and_raster(tmp_path: Path) -> None
 
 def test_backend_saves_validated_project_with_revision_guard(tmp_path: Path) -> None:
     project_path, _ = _workspace(tmp_path)
-    client = TestClient(create_app(tmp_path))
+    client = _ASGIClient(create_app(tmp_path))
     opened = client.get("/api/projects/plan").json()
     original_revision = opened["revision"]
     project = opened["project"]
@@ -128,7 +128,7 @@ def test_backend_saves_validated_project_with_revision_guard(tmp_path: Path) -> 
 
 def test_backend_requires_revision_and_rejects_invalid_geometry(tmp_path: Path) -> None:
     _workspace(tmp_path)
-    client = TestClient(create_app(tmp_path))
+    client = _ASGIClient(create_app(tmp_path))
     project = client.get("/api/projects/plan").json()["project"]
 
     missing_revision = client.put("/api/projects/plan", json=project)
@@ -168,7 +168,7 @@ def test_backend_rejects_image_outside_workspace(tmp_path: Path) -> None:
 
 def test_backend_rejects_missing_revision_and_unknown_projects(tmp_path: Path) -> None:
     _workspace(tmp_path)
-    client = TestClient(create_app(tmp_path))
+    client = _ASGIClient(create_app(tmp_path))
 
     assert client.get("/api/projects/does-not-exist").status_code == 404
     assert client.get("/editor/../outside").status_code in {404, 422}
