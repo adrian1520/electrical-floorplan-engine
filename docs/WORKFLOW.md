@@ -18,10 +18,9 @@ Dla obrazu bez perspektywy: mm_per_pixel = known_length_mm / measured_length_pix
 
 Przykładowa komenda, tworząca nowy plik projektu bez nadpisywania źródła:
 
-\`\`\`bash
-floorplan-engine calibrate --project plan.json --first-pixel 120,400 \\
-  --second-pixel 720,400 --length-mm 3000 --origin-pixel 120,400
-\`\`\`
+```bash
+floorplan-engine calibrate --project plan.json --first-pixel 120,400 --second-pixel 720,400 --length-mm 3000 --origin-pixel 120,400
+```
 
 W przypadku zdjęć z perspektywą pojedyncza skala może być niewystarczająca; potrzebna może być korekcja perspektywy na podstawie punktów odniesienia.
 
@@ -50,10 +49,10 @@ Przed eksportem sprawdź:
 
 Uruchom kontrolę modelu i geometrii przed renderowaniem:
 
-\`\`\`bash
+```bash
 floorplan-engine check plan.calibrated.json --json
 floorplan-engine plan.calibrated.json --output outputs/plan.pdf
-\`\`\`
+```
 
 Kontrola geometrii ostrzega o przecięciach wewnętrznych odcinków ścian, ich nakładaniu i niemal zbieżnych symbolach. Są to sygnały do przeglądu, nie automatyczne korekty geometrii. Wspólne końce i połączenia typu T są dozwolone.
 
