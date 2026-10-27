@@ -133,14 +133,6 @@ class RoomMM(BaseModel):
             if first == second:
                 raise ValueError("Room boundary must not contain zero-length edges.")
 
-        twice_area = sum(
-            point.x * vertices[(index + 1) % len(vertices)].y
-            - vertices[(index + 1) % len(vertices)].x * point.y
-            for index, point in enumerate(vertices)
-        )
-        if abs(twice_area) <= _EPSILON_MM:
-            raise ValueError("Room boundary must enclose a positive area.")
-
         count = len(vertices)
         for first_index in range(count):
             first_start = vertices[first_index]
@@ -155,6 +147,14 @@ class RoomMM(BaseModel):
                 second_end = vertices[(second_index + 1) % count]
                 if _segments_intersect(first_start, first_end, second_start, second_end):
                     raise ValueError("Room boundary must not self-intersect.")
+
+        twice_area = sum(
+            point.x * vertices[(index + 1) % len(vertices)].y
+            - vertices[(index + 1) % len(vertices)].x * point.y
+            for index, point in enumerate(vertices)
+        )
+        if abs(twice_area) <= _EPSILON_MM:
+            raise ValueError("Room boundary must enclose a positive area.")
         return self
 
     @property
