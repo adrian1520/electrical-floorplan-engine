@@ -2,11 +2,20 @@
   "title": "Przykładowy rzut — demonstracja",
   "units": "mm",
   "walls": [
-    {"id": "wall-north", "start": {"x": 0, "y": 0}, "end": {"x": 5000, "y": 0}},
-    {"id": "wall-east", "start": {"x": 5000, "y": 0}, "end": {"x": 5000, "y": 3500}},
-    {"id": "wall-south", "start": {"x": 5000, "y": 3500}, "end": {"x": 0, "y": 3500}},
-    {"id": "wall-west", "start": {"x": 0, "y": 3500}, "end": {"x": 0, "y": 0}},
-    {"id": "wall-partition", "start": {"x": 3000, "y": 0}, "end": {"x": 3000, "y": 3500}}
+    {"id": "wall-north", "start": {"x": 0, "y": 0}, "end": {"x": 5000, "y": 0}, "thickness_mm": 240, "role": "exterior"},
+    {"id": "wall-east", "start": {"x": 5000, "y": 0}, "end": {"x": 5000, "y": 3500}, "thickness_mm": 240, "role": "exterior"},
+    {"id": "wall-south", "start": {"x": 5000, "y": 3500}, "end": {"x": 0, "y": 3500}, "thickness_mm": 240, "role": "exterior"},
+    {"id": "wall-west", "start": {"x": 0, "y": 3500}, "end": {"x": 0, "y": 0}, "thickness_mm": 240, "role": "exterior"},
+    {"id": "wall-partition", "start": {"x": 3000, "y": 0}, "end": {"x": 3000, "y": 3500}, "thickness_mm": 120, "role": "partition"}
+  ],
+  "openings": [
+    {"id": "door-entry", "wall_id": "wall-south", "kind": "door", "offset_mm": 600, "width_mm": 900, "hinge_at": "start", "swing_side": "left", "label": "D1"},
+    {"id": "window-left", "wall_id": "wall-north", "kind": "window", "offset_mm": 900, "width_mm": 1200, "sill_height_mm": 900, "label": "W1"},
+    {"id": "door-between-rooms", "wall_id": "wall-partition", "kind": "door", "offset_mm": 1400, "width_mm": 800, "hinge_at": "end", "swing_side": "right", "label": "D2"}
+  ],
+  "rooms": [
+    {"id": "room-living", "name": "Salon", "vertices": [{"x": 0, "y": 0}, {"x": 3000, "y": 0}, {"x": 3000, "y": 3500}, {"x": 0, "y": 3500}]},
+    {"id": "room-kitchen", "name": "Kuchnia", "vertices": [{"x": 3000, "y": 0}, {"x": 5000, "y": 0}, {"x": 5000, "y": 3500}, {"x": 3000, "y": 3500}]}
   ],
   "symbols": [
     {"id": "light-1", "kind": "light", "position": {"x": 1500, "y": 1700}, "label": "L1"},
