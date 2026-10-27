@@ -26,3 +26,10 @@ def test_project_rejects_duplicate_ids_across_objects() -> None:
     }
     with pytest.raises(ValidationError, match="unique"):
         FloorplanProject.model_validate(project_data)
+
+
+def test_project_requires_scale_for_raster_underlay() -> None:
+    with pytest.raises(ValidationError, match="image_mm_per_pixel"):
+        FloorplanProject.model_validate(
+            {"title": "Rzut", "source_image": "plan.png"}
+        )
