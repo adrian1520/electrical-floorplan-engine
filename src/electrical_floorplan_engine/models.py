@@ -71,7 +71,7 @@ class FloorplanProject(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def require_unique_ids(self) -> "FloorplanProject":
+    def require_unique_ids(self) -> FloorplanProject:
         """Require unique IDs across walls and symbols."""
         ids = [item.id for item in [*self.walls, *self.symbols]]
         if len(ids) != len(set(ids)):
