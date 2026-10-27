@@ -49,3 +49,14 @@ Wygenerowany PDF należy obejrzeć w powiększeniu i wydrukować kontrolnie prze
 - informacja o jednostkach i ewentualnej skali wydruku;
 - oczekiwane oznaczenia elektryczne lub legenda ze źródłowego projektu;
 - informacja, czy plan ma przedstawiać istniejącą instalację, projektowaną instalację czy oba zakresy.
+
+
+## Bieżący prototyp CLI
+
+Po instalacji pakietu uruchom demonstrację poleceniem:
+
+`floorplan-engine examples/demo_project.json --output outputs/demo.pdf`
+
+Ścieżka `source_image` w pliku JSON jest interpretowana względem katalogu pliku JSON, jeśli nie jest ścieżką bezwzględną. Dla podkładu rastrowego wymagane są `image_mm_per_pixel` oraz współrzędne piksela odpowiadającego początkowi układu modelu.
+
+**Uwaga:** obecny renderer dopasowuje podkład i geometrię do strony A4 poziomo. Nie należy traktować wydruku jako skali 1:1 ani używać go do pomiarów. Dokładny wydruk w określonej skali będzie osobnym, testowanym etapem.
