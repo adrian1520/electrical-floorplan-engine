@@ -4,7 +4,7 @@ Narzędzie do przekształcania zdjęć lub skanów rzutów architektonicznych w 
 
 ## Status
 
-**Etap: kalibracja CLI i diagnostyka geometrii.** Dostępne są modele danych, kalibracja skali obrazu, kontrola kolizji geometrii, renderowanie PDF z geometrią wektorową i skalibrowanym podkładem rastrowym oraz testy. Automatyczne rozpoznawanie ścian, korekcja perspektywy i docelowy katalog symboli pozostają kolejnymi etapami.
+**Etap: wizualna kalibracja i diagnostyka geometrii.** Dostępne są modele danych, samodzielny panel HTML do kalibracji punktami, kalibracja skali z CLI, kontrola geometrii, renderowanie PDF oraz testy. Automatyczne rozpoznawanie ścian, korekcja perspektywy i docelowy katalog symboli pozostają kolejnymi etapami.
 
 ## Założenia projektowe
 
@@ -47,6 +47,18 @@ floorplan-engine calibrate --project examples/my_plan.json --first-pixel 120,400
 Domyślnie punkt początku układu to `--first-pixel`. Można go nadpisać opcją `--origin-pixel X,Y`. Polecenie zapisuje osobny plik `my_plan.calibrated.json` i nie nadpisuje wejścia. Wynik zawiera skalę `image_mm_per_pixel` oraz piksel odpowiadający punktowi (0,0) modelu. Współrzędne obrazu zaczynają się w lewym górnym rogu, z osią Y skierowaną w dół.
 
 Przy zdjęciu z perspektywą jednolita skala może nie wystarczyć — najpierw należy wyprostować obraz. Kalibrację warto zweryfikować na drugim znanym wymiarze.
+
+### Wizualna kalibracja punktami
+
+Zamiast ręcznie odczytywać współrzędne pikselowe, wygeneruj panel HTML. Obraz zostanie osadzony w pliku, więc panel działa lokalnie w przeglądarce i nie potrzebuje serwera ani połączenia sieciowego.
+
+```bash
+floorplan-engine calibrate-ui --project my_plan.json --output my_plan.calibration.html
+```
+
+Otwórz utworzony plik HTML w przeglądarce. Wskaż punkty A i B na znanym wymiarze, wpisz jego długość w mm, a następnie — opcjonalnie — wskaż punkt O początku układu. Dostępne są powiększenie, pomniejszenie i dopasowanie obrazu do widoku. Przycisk eksportu pobierze skalibrowany JSON.
+
+Zapisz pobrany JSON obok oryginalnego pliku projektu i obrazu, aby względna ścieżka `source_image` nadal była prawidłowa. Sprawdź skalę na drugim znanym wymiarze. Panel przyjmuje jednolitą skalę i nie prostuje zdjęć z perspektywą; nie traktuj go jako automatycznej rekonstrukcji rzutu.
 
 ### Kontrola geometrii przed eksportem
 
