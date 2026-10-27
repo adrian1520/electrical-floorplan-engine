@@ -44,6 +44,9 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
+[tool.ruff.lint.isort]
+lines-after-imports = 1
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
