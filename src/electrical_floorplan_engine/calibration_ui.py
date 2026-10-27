@@ -1,5 +1,4 @@
 """Generate a self-contained, offline browser UI for visual raster calibration."""
-# ruff: noqa: E501  # Embedded HTML/CSS/JS is intentionally not wrapped as Python source.
 
 from __future__ import annotations
 
