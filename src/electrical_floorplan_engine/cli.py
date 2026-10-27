@@ -13,8 +13,8 @@ from pydantic import ValidationError
 
 from electrical_floorplan_engine.calibration import PixelPoint, ScaleCalibration
 from electrical_floorplan_engine.calibration_ui import create_calibration_ui
-from electrical_floorplan_engine.geometry_ui import create_geometry_ui
 from electrical_floorplan_engine.geometry import validate_geometry
+from electrical_floorplan_engine.geometry_ui import create_geometry_ui
 from electrical_floorplan_engine.models import FloorplanProject
 from electrical_floorplan_engine.rendering.pdf import render_pdf
 
