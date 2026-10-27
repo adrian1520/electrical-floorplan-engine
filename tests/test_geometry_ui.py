@@ -62,7 +62,8 @@ def test_geometry_ui_embeds_calibrated_project_and_source_image(tmp_path: Path) 
     assert "__IMAGE_DATA_URI__" not in html
     assert "__PROJECT_BASE64__" not in html
     assert "__SOURCE_NAME_BASE64__" not in html
-    assert "fetch(" not in html
+    assert 'const BACKEND_PROJECT_ID = null;' in html
+    assert "image.src = EMBEDDED_IMAGE;" in html
     assert "https://" not in html
 
 

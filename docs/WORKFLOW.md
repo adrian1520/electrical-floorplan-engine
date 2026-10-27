@@ -39,14 +39,25 @@ W przypadku zdjęć z perspektywą pojedyncza skala może być niewystarczająca
 4. Oznacz niepewne fragmenty do potwierdzenia.
 5. Porównaj odległości i wymiary modelu z wymiarami źródłowymi.
 
-### Edytor wizualny
-Preferowany sposób ręcznego opracowania geometrii to edytor wizualny wygenerowany z projektu skalibrowanego:
+### Edytor wizualny i backend
+W pracy iteracyjnej preferuj backend, który serwuje obraz i zapisuje zatwierdzoną geometrię do pliku projektu:
 
-```bash
+~~~bash
+floorplan-engine server --workspace ./workspace --host 127.0.0.1 --port 8765
+~~~
+
+Umieść skalibrowany JSON i obraz źródłowy w katalogu workspace, następnie otwórz http://127.0.0.1:8765 i wybierz projekt. Przycisk zapisu waliduje model po stronie backendu i atomowo aktualizuje JSON. Rewizja SHA-256 w nagłówku **If-Match** zabezpiecza przed nadpisaniem zmian wykonanych po otwarciu strony. W przypadku konfliktu HTTP 409 odśwież edytor i zweryfikuj bieżący model przed ponownym zapisem. Dokumentacja API znajduje się pod http://127.0.0.1:8765/docs.
+
+Obraz i zapisywany plik projektu muszą znajdować się w katalogu workspace. Domyślny host to localhost; backend nie ma uwierzytelniania, więc nie należy wystawiać go do niezaufanej sieci.
+
+Tryb offline nadal można wygenerować poleceniem:
+
+~~~bash
 floorplan-engine edit-geometry --project plan.calibrated.json --output plan.geometry.html
-```
+~~~
 
-Edytor osadza podkład w HTML, zapisuje położenia w milimetrach, obsługuje ściany, obrysy pomieszczeń i otwory przypisane do ścian. Istniejące obiekty można zaznaczać, przeciągać za żółte uchwyty, zmieniać ich właściwości, usuwać i cofać ostatnie operacje. Eksport tworzy nowy plik JSON; nie nadpisuje pliku wejściowego.
+Tryb offline osadza obraz i pobiera wyeksportowany JSON. Backend zapisuje istniejący plik projektu; wybór trybu zależy od tego, czy potrzebna jest trwałość i kontrola rewizji po stronie serwera.
+
 ### Modelowanie ścian, drzwi, okien i pomieszczeń
 
 - Każda ściana ma stabilne ID oraz odcinek od punktu początkowego do końcowego; opcjonalnie wpisz grubość w mm i rolę architektoniczną.

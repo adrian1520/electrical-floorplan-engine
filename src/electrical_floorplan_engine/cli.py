@@ -78,6 +78,49 @@ def _edit_geometry(argv: Sequence[str]) -> int:
     return 0
 
 
+def _serve(argv: Sequence[str]) -> int:
+    """Start the local HTTP backend and browser-based geometry editor."""
+    parser = argparse.ArgumentParser(
+        prog="floorplan-engine server",
+        description="Serve the project workspace and persist edits through a local HTTP API.",
+    )
+    parser.add_argument(
+        "--workspace",
+        type=Path,
+        default=Path("workspace"),
+        help="Directory containing project JSON and source raster files (default: ./workspace)",
+    )
+    parser.add_argument("--host", default="127.0.0.1", help="Bind address (default: localhost only)")
+    parser.add_argument("--port", type=int, default=8765, help="HTTP port (default: 8765)")
+    parser.add_argument(
+        "--log-level",
+        choices=["critical", "error", "warning", "info", "debug"],
+        default="info",
+    )
+    args = parser.parse_args(argv)
+    if not 1 <= args.port <= 65535:
+        parser.error("--port must be between 1 and 65535")
+
+    try:
+        import uvicorn
+
+        from electrical_floorplan_engine.server import create_app
+    except ImportError:
+        logger.error("Backend dependencies are missing. Install them with: pip install -e '.[server]'")
+        return 2
+
+    if args.host not in {"127.0.0.1", "localhost", "::1"}:
+        logger.warning("The backend has no authentication; do not expose it to an untrusted network.")
+    try:
+        app = create_app(args.workspace)
+    except OSError as exc:
+        logger.error("Cannot initialize project workspace: %s", exc)
+        return 2
+
+    uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
+    return 0
+
+
 def _calibrate(argv: Sequence[str]) -> int:
     parser = argparse.ArgumentParser(
         prog="floorplan-engine calibrate",
@@ -194,13 +237,15 @@ def _render(argv: Sequence[str]) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Dispatch calibration, validation, or the backward-compatible PDF renderer."""
+    """Dispatch the local backend, calibration, validation, or PDF renderer."""
     arguments = list(sys.argv[1:] if argv is None else argv)
     logging.basicConfig(level=logging.WARNING)
     if arguments and arguments[0] == "calibrate-ui":
         return _calibration_ui(arguments[1:])
     if arguments and arguments[0] == "edit-geometry":
         return _edit_geometry(arguments[1:])
+    if arguments and arguments[0] == "server":
+        return _serve(arguments[1:])
     if arguments and arguments[0] == "calibrate":
         return _calibrate(arguments[1:])
     if arguments and arguments[0] == "check":

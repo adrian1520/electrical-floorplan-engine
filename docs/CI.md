@@ -15,13 +15,17 @@ Workflow `.github/workflows/tests.yml` uruchamia się przy pushu na `main`, dla 
 W środowisku z Pythonem 3.11 lub nowszym:
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install -e ".[dev,server]"
 pytest
 ruff check .
 ruff format --check .
 ```
 
 Każdy błąd walidacji lub testu powinien być naprawiony przy źródle i zabezpieczony testem regresyjnym, jeśli dotyczy zachowania aplikacji. Nie należy wyłączać reguł lintowania globalnie w celu ukrycia pojedynczego problemu formatowania; wyjątki powinny być ograniczone do pliku i uzasadnione.
+
+## Testy backendu edytora
+
+Zestaw deweloperski instaluje także dodatek serwerowy i HTTPX, aby testować API przez klienta ASGI. CI sprawdza listowanie projektów, dostarczanie rastra, zapis po walidacji, konflikty rewizji, wymagane nagłówki oraz odmowę dostępu do obrazów poza workspace. Samo przejście testów API nie zastępuje ręcznej kontroli użyteczności w przeglądarce.
 
 ## Wyniki audytu historii runów — 27 października 2026
 

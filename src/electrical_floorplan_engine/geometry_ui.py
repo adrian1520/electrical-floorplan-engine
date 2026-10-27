@@ -141,7 +141,8 @@ code { overflow-wrap: anywhere; }
     </div>
     <div id="message" class="status" role="status" aria-live="polite">Edytor działa lokalnie. Dane nie są wysyłane do sieci.</div>
     <button type="button" id="export-json" class="primary" style="margin-top:9px">Waliduj i pobierz JSON</button>
-    <p class="muted">Eksport odrzuca powtórzone identyfikatory, nieprawidłowe ściany, samoprzecinające się pomieszczenia i otwory wykraczające poza ściany. Przed PDF uruchom również <code>floorplan-engine check</code>.</p>
+    <button type="button" id="download-json" style="width:100%;margin-top:7px" hidden>Pobierz kopię JSON</button>
+    <p class="muted">Walidacja odrzuca powtórzone identyfikatory, nieprawidłowe ściany, samoprzecinające się pomieszczenia i otwory wykraczające poza ściany. Przed PDF uruchom również <code>floorplan-engine check</code>.</p>
     <h3>Elementy projektu</h3>
     <ul id="object-list"></ul>
   </section>
@@ -170,6 +171,8 @@ code { overflow-wrap: anywhere; }
 const EMBEDDED_IMAGE = "__IMAGE_DATA_URI__";
 const PROJECT_BASE64 = "__PROJECT_BASE64__";
 const SOURCE_NAME_BASE64 = "__SOURCE_NAME_BASE64__";
+const BACKEND_PROJECT_ID = __BACKEND_PROJECT_ID__;
+let CURRENT_REVISION = __PROJECT_REVISION__;
 
 function decodeBase64(text) {
   const binary = atob(text);
@@ -211,11 +214,18 @@ const scale = Number(project.image_mm_per_pixel);
 const originX = Number(project.image_origin_pixel_x || 0);
 const originY = Number(project.image_origin_pixel_y || 0);
 
+const backendMode = BACKEND_PROJECT_ID !== null;
 document.getElementById("project-title").textContent =
-  (project.title || "Projekt") + " · edytor geometrii lokalnie";
+  (project.title || "Projekt") + (backendMode ? " · edytor backendowy" : " · edytor geometrii lokalnie");
 image.alt = "Rzut: " + sourceName;
 image.src = EMBEDDED_IMAGE;
 document.getElementById("sill-field").hidden = false;
+document.getElementById("message").textContent = backendMode
+  ? "Tryb backendowy. Zapis aktualizuje plik projektu w katalogu roboczym serwera."
+  : "Edytor działa lokalnie. Zapis pobiera JSON i nie wysyła danych do sieci.";
+document.getElementById("export-json").textContent =
+  backendMode ? "Waliduj i zapisz na backendzie" : "Waliduj i pobierz JSON";
+document.getElementById("download-json").hidden = !backendMode;
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function allObjects() {
@@ -830,11 +840,7 @@ function validateProject() {
   });
   return errors;
 }
-document.getElementById("export-json").addEventListener("click", () => {
-  const errors = validateProject();
-  if (errors.length) {
-    setMessage("Eksport przerwany — popraw błędy:\n" + errors.join("\n"), "error"); return;
-  }
+function downloadProjectJson() {
   const output = JSON.stringify(project, null, 2) + "\n";
   const blob = new Blob([output], { type: "application/json;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -847,7 +853,41 @@ document.getElementById("export-json").addEventListener("click", () => {
   anchor.click();
   anchor.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  setMessage("Walidacja lokalna zakończona. Pobrano plik " + anchor.download + ".", "success");
+  setMessage("Pobrano kopię JSON: " + anchor.download + ".", "success");
+}
+document.getElementById("download-json").addEventListener("click", downloadProjectJson);
+document.getElementById("export-json").addEventListener("click", async () => {
+  const errors = validateProject();
+  if (errors.length) {
+    setMessage("Zapis przerwany — popraw błędy:\n" + errors.join("\n"), "error");
+    return;
+  }
+  if (!backendMode) {
+    downloadProjectJson();
+    return;
+  }
+  const button = document.getElementById("export-json");
+  button.disabled = true;
+  try {
+    const response = await fetch("/api/projects/" + encodeURIComponent(BACKEND_PROJECT_ID), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "If-Match": CURRENT_REVISION },
+      body: JSON.stringify(project)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 409) {
+        throw new Error("Projekt zmienił się od czasu otwarcia. Odśwież stronę i ponów edycję.");
+      }
+      throw new Error(result.detail || ("Błąd backendu HTTP " + response.status));
+    }
+    CURRENT_REVISION = result.revision;
+    setMessage("Projekt zweryfikowany i zapisany na backendzie. Rewizja: " + CURRENT_REVISION.slice(0, 12) + ".", "success");
+  } catch (error) {
+    setMessage("Nie zapisano projektu: " + error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
 });
 refreshWallOptions();
 render();
@@ -857,8 +897,14 @@ render();
 """
 
 
-def create_geometry_ui(project_path: str | Path, output_path: str | Path | None = None) -> Path:
-    """Build a self-contained geometry editor from a calibrated project JSON and raster."""
+def build_geometry_html(
+    project_path: str | Path,
+    *,
+    backend_project_id: str | None = None,
+    image_url: str | None = None,
+    revision: str | None = None,
+) -> str:
+    """Render the editor HTML, optionally connected to a backend project API."""
     project_file = Path(project_path).resolve()
     raw = json.loads(project_file.read_text(encoding="utf-8"))
     project = FloorplanProject.model_validate(raw)
@@ -872,21 +918,38 @@ def create_geometry_ui(project_path: str | Path, output_path: str | Path | None 
         raise FileNotFoundError(f"Source image does not exist: {image_path}")
 
     mime_type, _ = mimetypes.guess_type(image_path.name)
-    if not mime_type or not mime_type.startswith("image/"):
-        raise ValueError(f"Cannot determine image MIME type for {image_path.name!r}")
+    if not mime_type or not mime_type.startswith("image/") or mime_type == "image/svg+xml":
+        raise ValueError(f"Cannot determine a supported raster image MIME type for {image_path.name!r}")
 
-    image_payload = base64.b64encode(image_path.read_bytes()).decode("ascii")
-    image_data_uri = f"data:{mime_type};base64,{image_payload}"
+    if backend_project_id is not None:
+        if not image_url or not revision:
+            raise ValueError("Backend mode requires image_url and revision.")
+        image_source = image_url
+        backend_project_id_js = json.dumps(backend_project_id)
+        revision_js = json.dumps(revision)
+    else:
+        image_payload = base64.b64encode(image_path.read_bytes()).decode("ascii")
+        image_source = f"data:{mime_type};base64,{image_payload}"
+        backend_project_id_js = "null"
+        revision_js = "null"
+
     project_payload = base64.b64encode(json.dumps(raw, ensure_ascii=False).encode("utf-8")).decode(
         "ascii"
     )
     source_payload = base64.b64encode(image_path.name.encode("utf-8")).decode("ascii")
-    html = (
-        _HTML_TEMPLATE.replace("__IMAGE_DATA_URI__", image_data_uri)
+    return (
+        _HTML_TEMPLATE.replace("__IMAGE_DATA_URI__", image_source)
         .replace("__PROJECT_BASE64__", project_payload)
         .replace("__SOURCE_NAME_BASE64__", source_payload)
+        .replace("__BACKEND_PROJECT_ID__", backend_project_id_js)
+        .replace("__PROJECT_REVISION__", revision_js)
     )
 
+
+def create_geometry_ui(project_path: str | Path, output_path: str | Path | None = None) -> Path:
+    """Build a self-contained offline editor for calibrated geometry and save it as HTML."""
+    project_file = Path(project_path).resolve()
+    html = build_geometry_html(project_file)
     output = (
         Path(output_path)
         if output_path is not None

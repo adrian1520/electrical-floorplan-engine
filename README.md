@@ -24,7 +24,7 @@ Wymagany Python: 3.11 lub nowszy.
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
+python -m pip install -e ".[dev,server]"
 pytest
 ```
 
@@ -60,17 +60,28 @@ Otwórz utworzony plik HTML w przeglądarce. Wskaż punkty A i B na znanym wymia
 
 Zapisz pobrany JSON obok oryginalnego pliku projektu i obrazu, aby względna ścieżka `source_image` nadal była prawidłowa. Sprawdź skalę na drugim znanym wymiarze. Panel przyjmuje jednolitą skalę i nie prostuje zdjęć z perspektywą; nie traktuj go jako automatycznej rekonstrukcji rzutu.
 
-### Edytor geometrii na skalibrowanym rzucie
+### Edytor geometrii w trybie backendowym
 
-Po kalibracji otwórz lokalny edytor geometrii, który osadza obraz i dane projektu w jednym pliku HTML:
+Do regularnej pracy uruchom backend w oddzielnym katalogu roboczym. Skopiuj tam skalibrowany JSON oraz obraz źródłowy (ścieżka **source_image** musi wskazywać plik wewnątrz workspace). Zainstaluj dodatek serwerowy przez **python -m pip install -e ".[server]"**, a następnie uruchom:
 
-```bash
+~~~bash
+floorplan-engine server --workspace ./workspace --host 127.0.0.1 --port 8765
+~~~
+
+Otwórz http://127.0.0.1:8765, wybierz projekt i pracuj w przeglądarce. Obraz jest dostarczany przez API, a przycisk „Waliduj i zapisz na backendzie” wysyła geometrię do serwera. Backend waliduje model Pydantic i zapisuje plik JSON w katalogu workspace; nie tworzy dodatkowego pliku eksportowego. „Pobierz kopię JSON” pozostaje dostępne jako ręczny eksport. Schemat API znajduje się pod http://127.0.0.1:8765/docs.
+
+Zapisy są atomowe i chronione nagłówkiem **If-Match** z rewizją SHA-256. Jeśli plik zmieni się po otwarciu edytora, backend odrzuci zapis kodem HTTP 409 — odśwież stronę, aby wczytać bieżącą wersję. Backend domyślnie nasłuchuje wyłącznie na localhost i nie ma uwierzytelniania; nie wystawiaj go do sieci bez dodatkowej warstwy bezpieczeństwa. Ścieżki obrazów muszą pozostać w katalogu workspace.
+
+### Edytor offline
+
+Tryb samodzielnego HTML pozostaje dostępny, gdy nie chcesz uruchamiać serwera:
+
+~~~bash
 floorplan-engine edit-geometry --project my_plan.calibrated.json --output my_plan.geometry.html
-```
+~~~
 
-Otwórz HTML w przeglądarce. Możesz rysować ściany klikając ich początek i koniec, tworzyć pomieszczenia przez wskazywanie wierzchołków, umieszczać drzwi/okna/przejścia na wybranej ścianie, przeciągać uchwyty istniejących ścian i wierzchołków pomieszczeń oraz otworów, edytować właściwości zaznaczonego obiektu, usuwać obiekty i cofać ostatnie zmiany. Przyciąganie do końców ścian jest domyślnie włączone.
+HTML osadza wtedy obraz oraz dane projektu, działa bez sieci, a „Waliduj i pobierz JSON” pobiera kopię pliku .geometry.json; nie zapisuje jej automatycznie do pliku źródłowego. Oba tryby obsługują ręczne rysowanie ścian, obrysów pomieszczeń i otworów, przeciąganie uchwytów, edycję właściwości, usuwanie i cofanie ostatnich zmian. Edytor nie rozpoznaje automatycznie ścian z pikseli ani nie koryguje perspektywy.
 
-Przycisk „Waliduj i pobierz JSON” sprawdza identyfikatory, długości ścian, obrysy pomieszczeń i położenie otworów przed pobraniem nowego pliku `.geometry.json`. Plik źródłowy nie jest nadpisywany. Zapisz wyeksportowany JSON obok obrazu albo zachowaj ścieżkę `source_image` prawidłową względem lokalizacji JSON. Następnie uruchom `floorplan-engine check plan.geometry.json --json` i wygeneruj PDF. Edytor nie rozpoznaje automatycznie ścian z pikseli i nie koryguje perspektywy; geometria nadal wymaga weryfikacji przez człowieka.
 ### Kontrola geometrii przed eksportem
 
 ```bash

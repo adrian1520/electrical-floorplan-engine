@@ -66,15 +66,20 @@ Python uruchamiany w dostępnym sandboxie ChatGPT może służyć do prototypowa
 - Test integracyjny sprawdza, że PDF powstaje i zawiera oczekiwane strony/elementy.
 
 
+## Backend edytora
+
+Backend FastAPI jest opcjonalnym dodatkiem serwerowym. Użytkownik wskazuje katalog workspace zawierający pliki JSON i rastry. Interfejs HTML jest serwowany przez backend, podkład jest odczytywany przez endpoint obrazu, a zapis wymaga zgodnej rewizji SHA-256 w nagłówku `If-Match`. Model przechodzi walidację Pydantic przed atomową podmianą pliku. Backend ogranicza ścieżki do katalogu workspace i domyślnie powinien być dostępny wyłącznie na localhost. Nie implementuje uwierzytelniania ani uprawnień wielu użytkowników.
+
 ## Stan implementacji pierwszego przekroju
 
 Dostępne moduły:
 - `models.py`: zwalidowane punkty, ściany, otwory, proste wielokąty pomieszczeń, symbole i projekt w mm;
 - `calibration.py`: jednolita kalibracja piksel → mm z jawnym punktem początku układu;
 - `calibration_ui.py`: generator samodzielnego panelu HTML, z osadzonym obrazem, wyborem punktów i eksportem skalibrowanego JSON;
-- `geometry_ui.py`: offline edytor geometrii, rysowanie i edycja ścian, pomieszczeń i otworów oraz walidacja przed eksportem JSON;
+- `geometry_ui.py`: klient edytora geometrii w trybie offline lub połączonym z backendem; rysowanie i edycja ścian, pomieszczeń i otworów;
 - `rendering/pdf.py`: jednostronicowy PDF A4 poziomo, podkład rastrowy, ściany, schematyczne otwory i etykiety pomieszczeń;
-- `cli.py`: kalibracja, generowanie UI, kontrola geometrii i uruchomienie renderera.
+- `server.py`: lokalne API projektów, dostarczanie obrazów, walidacja i atomowy zapis z kontrolą rewizji;
+- `cli.py`: backend HTTP, kalibracja, generowanie UI, kontrola geometrii i uruchomienie renderera.
 
 Ograniczenia bieżącej wersji:
 - nie ma automatycznego wykrywania ścian z obrazu; geometria jest rysowana ręcznie w edytorze;
