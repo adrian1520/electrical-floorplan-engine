@@ -26,12 +26,16 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO if args.verbose else logging.WARNING)
     try:
         raw = json.loads(args.project.read_text(encoding="utf-8"))
+        if raw.get("source_image"):
+            image_path = Path(raw["source_image"])
+            if not image_path.is_absolute():
+                raw["source_image"] = str((args.project.resolve().parent / image_path).resolve())
         project = FloorplanProject.model_validate(raw)
-    except (OSError, json.JSONDecodeError, ValidationError) as exc:
-        logger.error("Cannot load a valid project: %s", exc)
+        output = render_pdf(project, args.output)
+    except (OSError, json.JSONDecodeError, ValidationError, TypeError) as exc:
+        logger.error("Cannot load project or render PDF: %s", exc)
         return 2
 
-    output = render_pdf(project, args.output)
     logger.info("PDF written to %s", output)
     print(output)
     return 0
