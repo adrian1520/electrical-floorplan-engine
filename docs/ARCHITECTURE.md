@@ -26,7 +26,8 @@ Docelowe encje:
 - SourceImage: plik źródłowy, wymiary pikselowe i historia transformacji.
 - Calibration: punkty/odcinek referencyjny, długość referencyjna i wynikowa skala.
 - Room: pomieszczenie i etykieta.
-- Wall / Opening: geometria ścian i otworów.
+- Wall / Opening: odcinki ścian z rolą i opcjonalną grubością; otwory parametryczne, przypisane do ściany przez ID i przedział długości;
+- Room: nazwa, prosty wielokąt graniczny i opcjonalne położenie etykiety.
 - ElectricalSymbol: typ symbolu, pozycja, obrót i właściwości.
 - Circuit: obwód oraz relacje między elementami, jeśli znajdą się w zakresie.
 - Issue: ostrzeżenie, błąd lub pozycja wymagająca decyzji użytkownika.
@@ -68,10 +69,10 @@ Python uruchamiany w dostępnym sandboxie ChatGPT może służyć do prototypowa
 ## Stan implementacji pierwszego przekroju
 
 Dostępne moduły:
-- `models.py`: zwalidowane punkty, odcinki, symbole i projekt w mm;
+- `models.py`: zwalidowane punkty, ściany, otwory, proste wielokąty pomieszczeń, symbole i projekt w mm;
 - `calibration.py`: jednolita kalibracja piksel → mm z jawnym punktem początku układu;
 - `calibration_ui.py`: generator samodzielnego panelu HTML, z osadzonym obrazem, wyborem punktów i eksportem skalibrowanego JSON;
-- `rendering/pdf.py`: jednostronicowy PDF A4 poziomo, podkład rastrowy i geometria wektorowa;
+- `rendering/pdf.py`: jednostronicowy PDF A4 poziomo, podkład rastrowy, ściany, schematyczne otwory i etykiety pomieszczeń;
 - `cli.py`: walidacja JSON i uruchomienie renderera.
 
 Ograniczenia bieżącej wersji:
