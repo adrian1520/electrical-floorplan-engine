@@ -877,7 +877,9 @@ def create_geometry_ui(project_path: str | Path, output_path: str | Path | None 
 
     image_payload = base64.b64encode(image_path.read_bytes()).decode("ascii")
     image_data_uri = f"data:{mime_type};base64,{image_payload}"
-    project_payload = base64.b64encode(json.dumps(raw, ensure_ascii=False).encode("utf-8")).decode("ascii")
+    project_payload = base64.b64encode(json.dumps(raw, ensure_ascii=False).encode("utf-8")).decode(
+        "ascii"
+    )
     source_payload = base64.b64encode(image_path.name.encode("utf-8")).decode("ascii")
     html = (
         _HTML_TEMPLATE.replace("__IMAGE_DATA_URI__", image_data_uri)

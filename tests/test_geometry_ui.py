@@ -58,7 +58,7 @@ def test_geometry_ui_embeds_calibrated_project_and_source_image(tmp_path: Path) 
     assert "function validateProject()" in html
     assert "function validRoom(vertices)" in html
     assert "function saveUndo()" in html
-    assert 'const sourceName = decodeBase64(SOURCE_NAME_BASE64);' in html
+    assert "const sourceName = decodeBase64(SOURCE_NAME_BASE64);" in html
     assert "__IMAGE_DATA_URI__" not in html
     assert "__PROJECT_BASE64__" not in html
     assert "__SOURCE_NAME_BASE64__" not in html
