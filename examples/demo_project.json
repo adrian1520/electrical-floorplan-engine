@@ -1,0 +1,19 @@
+{
+  "title": "Przykładowy rzut — demonstracja",
+  "units": "mm",
+  "walls": [
+    {"id": "wall-north", "start": {"x": 0, "y": 0}, "end": {"x": 5000, "y": 0}},
+    {"id": "wall-east", "start": {"x": 5000, "y": 0}, "end": {"x": 5000, "y": 3500}},
+    {"id": "wall-south", "start": {"x": 5000, "y": 3500}, "end": {"x": 0, "y": 3500}},
+    {"id": "wall-west", "start": {"x": 0, "y": 3500}, "end": {"x": 0, "y": 0}},
+    {"id": "wall-partition", "start": {"x": 3000, "y": 0}, "end": {"x": 3000, "y": 3500}}
+  ],
+  "symbols": [
+    {"id": "light-1", "kind": "light", "position": {"x": 1500, "y": 1700}, "label": "L1"},
+    {"id": "light-2", "kind": "light", "position": {"x": 4000, "y": 1700}, "label": "L2"},
+    {"id": "socket-1", "kind": "socket", "position": {"x": 400, "y": 500}, "label": "G1"},
+    {"id": "switch-1", "kind": "switch", "position": {"x": 450, "y": 300}, "rotation_deg": 90, "label": "Ł1"}
+  ],
+  "margin_mm": 15,
+  "notes": ["Dane syntetyczne — nie jest to projekt wykonawczy."]
+}
