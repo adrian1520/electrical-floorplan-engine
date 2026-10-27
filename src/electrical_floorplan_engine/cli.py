@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
 import json
 import logging
 import sys
 from pathlib import Path
-from typing import Sequence
 
 from pydantic import ValidationError
 
