@@ -56,7 +56,19 @@ class FloorplanProject(BaseModel):
     symbols: list[ElectricalSymbol] = Field(default_factory=list)
     margin_mm: float = Field(default=15.0, gt=0)
     source_image: str | None = None
+    image_mm_per_pixel: float | None = Field(default=None, gt=0)
+    image_origin_pixel_x: float = 0.0
+    image_origin_pixel_y: float = 0.0
     notes: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_image_calibration(self) -> "FloorplanProject":
+        """Require a scale whenever a raster underlay is specified."""
+        if self.source_image and self.image_mm_per_pixel is None:
+            raise ValueError("source_image requires image_mm_per_pixel calibration.")
+        if self.image_mm_per_pixel is not None and not self.source_image:
+            raise ValueError("image_mm_per_pixel requires source_image.")
+        return self
 
     @model_validator(mode="after")
     def require_unique_ids(self) -> "FloorplanProject":
