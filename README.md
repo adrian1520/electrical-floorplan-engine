@@ -20,50 +20,46 @@ Narzędzie do przekształcania zdjęć lub skanów rzutów architektonicznych w 
 
 Wymagany Python: 3.11 lub nowszy.
 
-\`\`\`bash
+```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows PowerShell: .venv\\Scripts\\Activate.ps1
+source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 pytest
-\`\`\`
+```
 
 ### Wygenerowanie demonstracyjnego PDF
 
-\`\`\`bash
+```bash
 floorplan-engine examples/demo_project.json --output outputs/demo.pdf
-\`\`\`
+```
 
 Przykładowy projekt zawiera wyłącznie syntetyczną geometrię. Nie jest projektem wykonawczym.
 
 ### Kalibracja obrazu
 
-Przygotuj plik JSON z polem \`source_image\`, wskazującym ścieżkę do obrazu. Wskaż dwa punkty na odcinku o znanej długości (współrzędne pikselowe X,Y) i uruchom:
+Przygotuj plik JSON z polem `source_image`, wskazującym ścieżkę do obrazu. Wskaż dwa punkty na odcinku o znanej długości (współrzędne pikselowe X,Y) i uruchom:
 
-\`\`\`bash
-floorplan-engine calibrate \\
-  --project examples/my_plan.json \\
-  --first-pixel 120,400 \\
-  --second-pixel 720,400 \\
-  --length-mm 3000
-\`\`\`
+```bash
+floorplan-engine calibrate --project examples/my_plan.json --first-pixel 120,400 --second-pixel 720,400 --length-mm 3000
+```
 
-Domyślnie punkt początku układu to \`--first-pixel\`. Można go nadpisać opcją \`--origin-pixel X,Y\`. Polecenie zapisuje osobny plik \`my_plan.calibrated.json\` i nie nadpisuje wejścia. Wynik zawiera skalę \`image_mm_per_pixel\` oraz piksel odpowiadający punktowi (0,0) modelu. Współrzędne obrazu zaczynają się w lewym górnym rogu, z osią Y skierowaną w dół.
+Domyślnie punkt początku układu to `--first-pixel`. Można go nadpisać opcją `--origin-pixel X,Y`. Polecenie zapisuje osobny plik `my_plan.calibrated.json` i nie nadpisuje wejścia. Wynik zawiera skalę `image_mm_per_pixel` oraz piksel odpowiadający punktowi (0,0) modelu. Współrzędne obrazu zaczynają się w lewym górnym rogu, z osią Y skierowaną w dół.
 
 Przy zdjęciu z perspektywą jednolita skala może nie wystarczyć — najpierw należy wyprostować obraz. Kalibrację warto zweryfikować na drugim znanym wymiarze.
 
 ### Kontrola geometrii przed eksportem
 
-\`\`\`bash
+```bash
 floorplan-engine check examples/demo_project.json
 floorplan-engine check examples/demo_project.json --json
-\`\`\`
+```
 
-Kontrola raportuje przecięcia wewnętrzne ścian, nakładające się odcinki i symbole umieszczone w niemal identycznym miejscu. Połączenia ścian przez wspólne końce i połączenia typu T nie są zgłaszane. Są to ostrzeżenia do przeglądu — nie wszystkie przecięcia muszą być błędami projektowymi. Flaga \`--strict\` zwraca kod 1, gdy znaleziono ostrzeżenia; błędy danych wejściowych zwracają kod 2.
+Kontrola raportuje przecięcia wewnętrzne ścian, nakładające się odcinki i symbole umieszczone w niemal identycznym miejscu. Połączenia ścian przez wspólne końce i połączenia typu T nie są zgłaszane. Są to ostrzeżenia do przeglądu — nie wszystkie przecięcia muszą być błędami projektowymi. Flaga `--strict` zwraca kod 1, gdy znaleziono ostrzeżenia; błędy danych wejściowych zwracają kod 2.
 
 ### Podkład rastrowy
 
-Plik JSON projektu może zawierać \`source_image\`, \`image_mm_per_pixel\`, \`image_origin_pixel_x\` i \`image_origin_pixel_y\`. Ścieżki względne są interpretowane względem pliku JSON projektu podczas renderowania.
+Plik JSON projektu może zawierać `source_image`, `image_mm_per_pixel`, `image_origin_pixel_x` i `image_origin_pixel_y`. Ścieżki względne są interpretowane względem pliku JSON projektu podczas renderowania.
 
 Renderer dopasowuje rysunek do A4 poziomo. Wynik nie jest gwarantowanym wydrukiem 1:1; dokładny wydruk w określonej skali będzie osobnym, testowanym etapem.
 
