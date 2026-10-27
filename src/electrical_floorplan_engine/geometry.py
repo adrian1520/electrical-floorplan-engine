@@ -72,13 +72,11 @@ def _intersection_kind(first: SegmentMM, second: SegmentMM) -> str | None:
     o2 = _cross(first.start, first.end, second.end)
     o3 = _cross(second.start, second.end, first.start)
     o4 = _cross(second.start, second.end, first.end)
-    first_opposite = (
-        (o1 > _EPSILON_MM and o2 < -_EPSILON_MM)
-        or (o1 < -_EPSILON_MM and o2 > _EPSILON_MM)
+    first_opposite = (o1 > _EPSILON_MM and o2 < -_EPSILON_MM) or (
+        o1 < -_EPSILON_MM and o2 > _EPSILON_MM
     )
-    second_opposite = (
-        (o3 > _EPSILON_MM and o4 < -_EPSILON_MM)
-        or (o3 < -_EPSILON_MM and o4 > _EPSILON_MM)
+    second_opposite = (o3 > _EPSILON_MM and o4 < -_EPSILON_MM) or (
+        o3 < -_EPSILON_MM and o4 > _EPSILON_MM
     )
     if first_opposite and second_opposite:
         return "crossing"
