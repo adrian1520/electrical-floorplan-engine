@@ -24,3 +24,8 @@ Wymiary i geometria o nieznanym pochodzeniu są oznaczane jako niepotwierdzone. 
 **Status:** przyjęta z ograniczeniem.
 
 Sandbox ChatGPT jest wybranym środowiskiem do uruchamiania prototypów i testów, w granicach dostępnych narzędzi. Nie jest traktowany jako trwały serwer aplikacyjny ani jako automatycznie połączony checkout repozytorium. GitHub pozostaje trwałym źródłem kodu i dokumentacji.
+
+## ADR-006 — jawny model otworów i pomieszczeń
+**Status:** przyjęta.
+
+Ściany pozostają odcinkami w mm; otwory są parametrycznymi przedziałami przypisanymi do ściany przez stabilne ID, offset i szerokość. Pomieszczenia są prostymi wielokątami z niejawnym domknięciem. Walidacja nie pozwala na otwory poza ścianą, nakładające się otwory na tej samej ścianie ani samoprzecinające się obrysy. Renderer PDF przedstawia otwory i nazwy pomieszczeń w sposób schematyczny. Nie ma jeszcze automatycznego rozpoznawania obiektów z obrazu; geometria musi pochodzić z danych jawnych lub być potwierdzona przez użytkownika.
