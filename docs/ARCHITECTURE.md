@@ -63,3 +63,18 @@ Python uruchamiany w dostępnym sandboxie ChatGPT może służyć do prototypowa
 - Jednostki oraz orientacja arkusza są określone.
 - Elementy krytyczne lub niepewne są pokazane w raporcie.
 - Test integracyjny sprawdza, że PDF powstaje i zawiera oczekiwane strony/elementy.
+
+
+## Stan implementacji pierwszego przekroju
+
+Dostępne moduły:
+- `models.py`: zwalidowane punkty, odcinki, symbole i projekt w mm;
+- `calibration.py`: jednolita kalibracja piksel → mm z jawnym punktem początku układu;
+- `rendering/pdf.py`: jednostronicowy PDF A4 poziomo, podkład rastrowy i geometria wektorowa;
+- `cli.py`: walidacja JSON i uruchomienie renderera.
+
+Ograniczenia bieżącej wersji:
+- nie ma automatycznego wykrywania ścian z obrazu;
+- kalibracja jest jednolita i nie koryguje perspektywy;
+- PDF jest dopasowywany do arkusza, a nie drukowany w gwarantowanej skali 1:1;
+- symbole są schematycznymi znacznikami, a nie zatwierdzoną biblioteką normową.
