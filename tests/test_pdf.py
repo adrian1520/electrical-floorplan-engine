@@ -7,8 +7,7 @@ from electrical_floorplan_engine.models import FloorplanProject
 from electrical_floorplan_engine.rendering.pdf import render_pdf
 
 _ONE_PIXEL_PNG = (
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/"
-    "aXcAAAAASUVORK5CYII="
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/aXcAAAAASUVORK5CYII="
 )
 
 
@@ -28,9 +27,7 @@ def test_render_pdf_creates_single_page_document(tmp_path: Path) -> None:
                     "end": {"x": 4000, "y": 3000},
                 },
             ],
-            "symbols": [
-                {"id": "light-1", "kind": "light", "position": {"x": 2000, "y": 1500}}
-            ],
+            "symbols": [{"id": "light-1", "kind": "light", "position": {"x": 2000, "y": 1500}}],
         }
     )
     output = render_pdf(project, tmp_path / "test.pdf")
