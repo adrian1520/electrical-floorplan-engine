@@ -44,12 +44,10 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
 
-[tool.ruff.lint.isort]
-lines-after-imports = 2
-
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 
 [tool.ruff.lint.per-file-ignores]
-"src/electrical_floorplan_engine/calibration_ui.py" = ["E501"]
+# I001 misidentifies the blank line before the embedded HTML template constant.
+"src/electrical_floorplan_engine/calibration_ui.py" = ["E501", "I001"]
