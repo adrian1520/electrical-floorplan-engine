@@ -26,7 +26,7 @@ class SegmentMM(BaseModel):
     id: str = Field(min_length=1)
 
     @model_validator(mode="after")
-    def reject_zero_length(self) -> "SegmentMM":
+    def reject_zero_length(self) -> SegmentMM:
         """Reject segments whose endpoints are identical."""
         if self.start == self.end:
             raise ValueError("Segment endpoints must be different.")
@@ -62,7 +62,7 @@ class FloorplanProject(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def validate_image_calibration(self) -> "FloorplanProject":
+    def validate_image_calibration(self) -> FloorplanProject:
         """Require a scale whenever a raster underlay is specified."""
         if self.source_image and self.image_mm_per_pixel is None:
             raise ValueError("source_image requires image_mm_per_pixel calibration.")
