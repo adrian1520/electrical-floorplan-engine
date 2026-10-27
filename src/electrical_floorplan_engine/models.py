@@ -258,7 +258,9 @@ class FloorplanProject(BaseModel):
 
         for wall_id, wall_openings in openings_by_wall.items():
             sorted_openings = sorted(wall_openings, key=lambda opening: opening.offset_mm)
-            for previous, current in zip(sorted_openings, sorted_openings[1:]):
+            for index in range(len(sorted_openings) - 1):
+                previous = sorted_openings[index]
+                current = sorted_openings[index + 1]
                 previous_end = previous.offset_mm + previous.width_mm
                 if current.offset_mm < previous_end - _EPSILON_MM:
                     raise ValueError(
