@@ -39,6 +39,15 @@ W przypadku zdjęć z perspektywą pojedyncza skala może być niewystarczająca
 4. Oznacz niepewne fragmenty do potwierdzenia.
 5. Porównaj odległości i wymiary modelu z wymiarami źródłowymi.
 
+### Modelowanie ścian, drzwi, okien i pomieszczeń
+
+- Każda ściana ma stabilne ID oraz odcinek od punktu początkowego do końcowego; opcjonalnie wpisz grubość w mm i rolę architektoniczną.
+- Otwór musi wskazywać istniejącą ścianę przez `wall_id`. `offset_mm` jest odległością wzdłuż ściany od jej punktu startowego (nie od globalnego początku układu), a `width_mm` jest szerokością otworu.
+- Nie umieszczaj otworu poza ścianą i nie nakładaj dwóch otworów na tym samym odcinku. Jeśli otwory są obok siebie, ich przedziały mogą stykać się końcami.
+- Opisuj pomieszczenia przez wielokąt `vertices` w mm. Lista wierzchołków jest automatycznie zamykana, bez ponownego wpisywania pierwszego punktu na końcu. Wielokąt nie może przecinać samego siebie.
+- Nazwa pomieszczenia jest wyświetlana w centroidzie pola. Dla pomieszczeń wklęsłych lub nieregularnych ustaw opcjonalne `label_position` ręcznie.
+- Traktuj szkic PDF jako wizualną kontrolę modelu. Nie jest jeszcze automatycznym rozpoznaniem ani normowym symbolem CAD.
+
 ## Etap 4 — elementy elektryczne
 1. Uzgodnij katalog symboli oraz ich znaczenie przed masowym rozmieszczaniem.
 2. Rozmieszczaj symbole w układzie współrzędnych modelu, nie w pikselach obrazu.
