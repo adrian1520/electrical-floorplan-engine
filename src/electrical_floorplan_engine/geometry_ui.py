@@ -919,7 +919,9 @@ def build_geometry_html(
 
     mime_type, _ = mimetypes.guess_type(image_path.name)
     if not mime_type or not mime_type.startswith("image/") or mime_type == "image/svg+xml":
-        raise ValueError(f"Cannot determine a supported raster image MIME type for {image_path.name!r}")
+        raise ValueError(
+            f"Cannot determine a supported raster image MIME type for {image_path.name!r}"
+        )
 
     if backend_project_id is not None:
         if not image_url or not revision:
