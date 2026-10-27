@@ -70,11 +70,12 @@ Python uruchamiany w dostępnym sandboxie ChatGPT może służyć do prototypowa
 Dostępne moduły:
 - `models.py`: zwalidowane punkty, odcinki, symbole i projekt w mm;
 - `calibration.py`: jednolita kalibracja piksel → mm z jawnym punktem początku układu;
+- `calibration_ui.py`: generator samodzielnego panelu HTML, z osadzonym obrazem, wyborem punktów i eksportem skalibrowanego JSON;
 - `rendering/pdf.py`: jednostronicowy PDF A4 poziomo, podkład rastrowy i geometria wektorowa;
 - `cli.py`: walidacja JSON i uruchomienie renderera.
 
 Ograniczenia bieżącej wersji:
 - nie ma automatycznego wykrywania ścian z obrazu;
-- kalibracja jest jednolita i nie koryguje perspektywy;
+- kalibracja jest jednolita i nie koryguje perspektywy; panel wizualny jedynie ułatwia wybór punktów;
 - PDF jest dopasowywany do arkusza, a nie drukowany w gwarantowanej skali 1:1;
 - symbole są schematycznymi znacznikami, a nie zatwierdzoną biblioteką normową.
