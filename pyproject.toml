@@ -45,7 +45,7 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.isort]
-lines-after-imports = 1
+lines-after-imports = 2
 
 [tool.ruff.format]
 quote-style = "double"
