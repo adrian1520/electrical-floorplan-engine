@@ -16,6 +16,13 @@
 
 Dla obrazu bez perspektywy: mm_per_pixel = known_length_mm / measured_length_pixels.
 
+Przykładowa komenda, tworząca nowy plik projektu bez nadpisywania źródła:
+
+\`\`\`bash
+floorplan-engine calibrate --project plan.json --first-pixel 120,400 \\
+  --second-pixel 720,400 --length-mm 3000 --origin-pixel 120,400
+\`\`\`
+
 W przypadku zdjęć z perspektywą pojedyncza skala może być niewystarczająca; potrzebna może być korekcja perspektywy na podstawie punktów odniesienia.
 
 ## Etap 3 — geometria architektoniczna
@@ -41,6 +48,15 @@ Przed eksportem sprawdź:
 - legendę, skalę, tytuł arkusza i orientację strony;
 - listę ostrzeżeń i pozycji wymagających weryfikacji.
 
+Uruchom kontrolę modelu i geometrii przed renderowaniem:
+
+\`\`\`bash
+floorplan-engine check plan.calibrated.json --json
+floorplan-engine plan.calibrated.json --output outputs/plan.pdf
+\`\`\`
+
+Kontrola geometrii ostrzega o przecięciach wewnętrznych odcinków ścian, ich nakładaniu i niemal zbieżnych symbolach. Są to sygnały do przeglądu, nie automatyczne korekty geometrii. Wspólne końce i połączenia typu T są dozwolone.
+
 Wygenerowany PDF należy obejrzeć w powiększeniu i wydrukować kontrolnie przed wykorzystaniem jako dokumentacji wykonawczej.
 
 ## Minimalny pakiet przekazywany do opracowania
@@ -50,13 +66,5 @@ Wygenerowany PDF należy obejrzeć w powiększeniu i wydrukować kontrolnie prze
 - oczekiwane oznaczenia elektryczne lub legenda ze źródłowego projektu;
 - informacja, czy plan ma przedstawiać istniejącą instalację, projektowaną instalację czy oba zakresy.
 
-
-## Bieżący prototyp CLI
-
-Po instalacji pakietu uruchom demonstrację poleceniem:
-
-`floorplan-engine examples/demo_project.json --output outputs/demo.pdf`
-
-Ścieżka `source_image` w pliku JSON jest interpretowana względem katalogu pliku JSON, jeśli nie jest ścieżką bezwzględną. Dla podkładu rastrowego wymagane są `image_mm_per_pixel` oraz współrzędne piksela odpowiadającego początkowi układu modelu.
-
-**Uwaga:** obecny renderer dopasowuje podkład i geometrię do strony A4 poziomo. Nie należy traktować wydruku jako skali 1:1 ani używać go do pomiarów. Dokładny wydruk w określonej skali będzie osobnym, testowanym etapem.
+## Ograniczenia obecnego prototypu
+Nie ma jeszcze automatycznego wykrywania ścian, korekcji perspektywy ani katalogu symboli zgodnego z konkretnym standardem. PDF jest dopasowywany do A4 poziomo, a nie do gwarantowanej skali wydruku 1:1.
