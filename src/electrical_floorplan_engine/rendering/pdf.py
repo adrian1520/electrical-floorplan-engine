@@ -7,6 +7,7 @@ from pathlib import Path
 
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 from electrical_floorplan_engine.models import FloorplanProject, PointMM
@@ -17,6 +18,19 @@ def _bounds(project: FloorplanProject) -> tuple[float, float, float, float]:
     for wall in project.walls:
         points.extend((wall.start, wall.end))
     points.extend(symbol.position for symbol in project.symbols)
+
+    if project.source_image and project.image_mm_per_pixel:
+        image_width_px, image_height_px = ImageReader(project.source_image).getSize()
+        scale = project.image_mm_per_pixel
+        left = -project.image_origin_pixel_x * scale
+        top = project.image_origin_pixel_y * scale
+        points.extend(
+            (
+                PointMM(x=left, y=top),
+                PointMM(x=left + image_width_px * scale, y=top - image_height_px * scale),
+            )
+        )
+
     if not points:
         return (0.0, 0.0, 100.0, 100.0)
     return (
@@ -30,9 +44,8 @@ def _bounds(project: FloorplanProject) -> tuple[float, float, float, float]:
 def render_pdf(project: FloorplanProject, output_path: str | Path) -> Path:
     """Render a project to a single-page landscape A4 PDF.
 
-    The geometry is fitted to the printable page. The PDF is therefore a
-    presentation output, not a guaranteed 1:1 scale drawing. A true print scale
-    and raster underlay alignment will be introduced in a later iteration.
+    The geometry and calibrated raster underlay are fitted to the printable page.
+    The PDF is therefore a presentation output, not a guaranteed 1:1 scale drawing.
     """
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -69,8 +82,25 @@ def render_pdf(project: FloorplanProject, output_path: str | Path) -> Path:
     pdf.drawRightString(
         page_width - margin,
         page_height - margin - 4 * mm,
-        "SCHEMAT — dopasowany do arkusza; nie jest gwarantowana skala wydruku 1:1",
+        "SCHEMAT — dopasowany do arkusza; skala wydruku 1:1 nie jest gwarantowana",
     )
+
+    # The raster is mapped from pixel coordinates into the calibrated model space.
+    if project.source_image and project.image_mm_per_pixel:
+        image_width_px, image_height_px = ImageReader(project.source_image).getSize()
+        scale = project.image_mm_per_pixel
+        image_left = -project.image_origin_pixel_x * scale
+        image_bottom = (project.image_origin_pixel_y - image_height_px) * scale
+        image_x, image_y = xy(PointMM(x=image_left, y=image_bottom))
+        pdf.drawImage(
+            ImageReader(project.source_image),
+            image_x,
+            image_y,
+            width=image_width_px * scale * mm * fit_scale,
+            height=image_height_px * scale * mm * fit_scale,
+            preserveAspectRatio=False,
+            mask="auto",
+        )
 
     # Wall geometry
     pdf.setLineWidth(0.45 * mm)
@@ -79,7 +109,7 @@ def render_pdf(project: FloorplanProject, output_path: str | Path) -> Path:
         x2, y2 = xy(wall.end)
         pdf.line(x1, y1, x2, y2)
 
-    # Symbols are intentionally schematic until a formal symbol library is agreed.
+    # Symbols are schematic until a formal symbol library is agreed.
     radius = max(1.6 * mm, min(2.5 * mm, fit_scale * 2.0 * mm))
     for symbol in project.symbols:
         x, y = xy(symbol.position)
@@ -103,10 +133,13 @@ def render_pdf(project: FloorplanProject, output_path: str | Path) -> Path:
             pdf.setFont("Helvetica", 7)
             pdf.drawString(x + radius + 1.2 * mm, y + radius, symbol.label[:48])
 
-    # Notes and disclaimer
     footer_y = margin * 0.55
     pdf.setFont("Helvetica", 7)
-    pdf.drawString(margin, footer_y, f"Jednostki modelu: mm | Ściany: {len(project.walls)} | Symbole: {len(project.symbols)}")
+    pdf.drawString(
+        margin,
+        footer_y,
+        f"Jednostki modelu: mm | Ściany: {len(project.walls)} | Symbole: {len(project.symbols)}",
+    )
     if project.notes:
         pdf.drawRightString(page_width - margin, footer_y, project.notes[0][:100])
 
