@@ -16,6 +16,14 @@
 
 Dla obrazu bez perspektywy: mm_per_pixel = known_length_mm / measured_length_pixels.
 
+Preferowana ścieżka to panel wizualny:
+
+```bash
+floorplan-engine calibrate-ui --project plan.json --output plan.calibration.html
+```
+
+Otwórz plik HTML w przeglądarce, zaznacz punkty A i B, wpisz wymiar referencyjny i opcjonalnie ustaw punkt O. Pobierz skalibrowany JSON i umieść go obok oryginalnego projektu oraz obrazu, aby zachować działanie ścieżek względnych. Panel działa offline, ale nie koryguje perspektywy.
+
 Przykładowa komenda, tworząca nowy plik projektu bez nadpisywania źródła:
 
 ```bash
@@ -66,4 +74,4 @@ Wygenerowany PDF należy obejrzeć w powiększeniu i wydrukować kontrolnie prze
 - informacja, czy plan ma przedstawiać istniejącą instalację, projektowaną instalację czy oba zakresy.
 
 ## Ograniczenia obecnego prototypu
-Nie ma jeszcze automatycznego wykrywania ścian, korekcji perspektywy ani katalogu symboli zgodnego z konkretnym standardem. PDF jest dopasowywany do A4 poziomo, a nie do gwarantowanej skali wydruku 1:1.
+Panel kalibracji wizualnej pozwala wybrać punkty myszą lub dotykiem, lecz nie wykonuje automatycznego wykrywania ścian ani korekcji perspektywy; nie ma też zatwierdzonego katalogu symboli zgodnego z konkretnym standardem. PDF jest dopasowywany do A4 poziomo, a nie do gwarantowanej skali wydruku 1:1.
