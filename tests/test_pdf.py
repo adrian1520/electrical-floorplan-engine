@@ -63,3 +63,63 @@ def test_render_pdf_accepts_calibrated_raster_underlay(tmp_path: Path) -> None:
 
     assert output.exists()
     assert len(PdfReader(str(output)).pages) == 1
+
+
+def test_render_pdf_includes_room_and_opening_labels(tmp_path: Path) -> None:
+    project = FloorplanProject.model_validate(
+        {
+            "title": "Plan z otworami",
+            "walls": [
+                {
+                    "id": "wall-1",
+                    "start": {"x": 0, "y": 0},
+                    "end": {"x": 5000, "y": 0},
+                    "role": "exterior",
+                    "thickness_mm": 240,
+                }
+            ],
+            "openings": [
+                {
+                    "id": "door-1",
+                    "wall_id": "wall-1",
+                    "kind": "door",
+                    "offset_mm": 500,
+                    "width_mm": 900,
+                    "label": "D1",
+                },
+                {
+                    "id": "window-1",
+                    "wall_id": "wall-1",
+                    "kind": "window",
+                    "offset_mm": 2200,
+                    "width_mm": 1400,
+                    "sill_height_mm": 900,
+                    "label": "W1",
+                },
+            ],
+            "rooms": [
+                {
+                    "id": "room-1",
+                    "name": "Salon",
+                    "label_position": {"x": 2500, "y": 2500},
+                    "vertices": [
+                        {"x": 0, "y": 0},
+                        {"x": 5000, "y": 0},
+                        {"x": 5000, "y": 4000},
+                        {"x": 0, "y": 4000},
+                    ],
+                }
+            ],
+        }
+    )
+
+    output = render_pdf(project, tmp_path / "architectural.pdf")
+    reader = PdfReader(str(output))
+
+    assert len(reader.pages) == 1
+    extracted = reader.pages[0].extract_text()
+    assert "Salon" in extracted
+    assert "D1" in extracted
+    assert "W1" in extracted
+    assert "Otwory: 2" in extracted
+    assert "Pomieszczenia: 1" in extracted
