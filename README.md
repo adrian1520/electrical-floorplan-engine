@@ -4,7 +4,7 @@ Narzędzie do przekształcania zdjęć lub skanów rzutów architektonicznych w 
 
 ## Status
 
-**Etap: wizualna kalibracja i diagnostyka geometrii.** Dostępne są modele danych, samodzielny panel HTML do kalibracji punktami, kalibracja skali z CLI, kontrola geometrii, renderowanie PDF oraz testy. Automatyczne rozpoznawanie ścian, korekcja perspektywy i docelowy katalog symboli pozostają kolejnymi etapami.
+**Etap: model architektoniczny i kalibracja wizualna.** Dostępne są ściany z metadanymi, otwory drzwiowe/okienne przypisane do ścian, pomieszczenia z walidowanymi obrysami, kontrola geometrii i PDF z etykietami pomieszczeń oraz schematycznie renderowanymi otworami. Automatyczne rozpoznawanie ścian i korekcja perspektywy pozostają kolejnymi etapami.
 
 ## Założenia projektowe
 
@@ -68,6 +68,14 @@ floorplan-engine check examples/demo_project.json --json
 ```
 
 Kontrola raportuje przecięcia wewnętrzne ścian, nakładające się odcinki i symbole umieszczone w niemal identycznym miejscu. Połączenia ścian przez wspólne końce i połączenia typu T nie są zgłaszane. Są to ostrzeżenia do przeglądu — nie wszystkie przecięcia muszą być błędami projektowymi. Flaga `--strict` zwraca kod 1, gdy znaleziono ostrzeżenia; błędy danych wejściowych zwracają kod 2.
+
+### Model architektoniczny: ściany, otwory i pomieszczenia
+
+Ściana jest odcinkiem w mm z opcjonalną grubością i rolą (`exterior`, `interior`, `partition`, `unknown`). Otwór odwołuje się do ściany przez `wall_id`; `offset_mm` mierzy odległość od początku odcinka ściany, a `width_mm` określa szerokość otworu. Otwory nie mogą wykraczać poza ścianę ani nakładać się na siebie na tej samej ścianie.
+
+Pomieszczenie jest wielokątem z listą `vertices`; domknięcie obrysu jest domyślne (nie powtarzaj pierwszego wierzchołka na końcu). Walidacja odrzuca obrysy samoprzecinające się, zerowej powierzchni i z powtórzonymi wierzchołkami. Opcjonalne `label_position` pozwala ręcznie ustawić etykietę, gdy centroid wielokąta nie jest odpowiednim miejscem.
+
+Przykładowy projekt obejmujący te obiekty znajduje się w `examples/demo_project.json`. PDF pokazuje przerwy w ścianach, symboliczny skrzydło drzwiowe, ramy okien i nazwy pomieszczeń. Reprezentacja pozostaje schematyczna; nie zastępuje zatwierdzonego rysunku architektonicznego.
 
 ### Podkład rastrowy
 
