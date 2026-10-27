@@ -4,7 +4,7 @@ Narzędzie do przekształcania zdjęć lub skanów rzutów architektonicznych w 
 
 ## Status
 
-**Etap: model architektoniczny i kalibracja wizualna.** Dostępne są ściany z metadanymi, otwory drzwiowe/okienne przypisane do ścian, pomieszczenia z walidowanymi obrysami, kontrola geometrii i PDF z etykietami pomieszczeń oraz schematycznie renderowanymi otworami. Automatyczne rozpoznawanie ścian i korekcja perspektywy pozostają kolejnymi etapami.
+**Etap: model architektoniczny, kalibracja wizualna i edytor geometrii.** Dostępne są ściany z metadanymi, otwory drzwiowe/okienne przypisane do ścian, pomieszczenia z walidowanymi obrysami, kontrola geometrii i PDF z etykietami pomieszczeń oraz schematycznie renderowanymi otworami. Automatyczne rozpoznawanie ścian i korekcja perspektywy pozostają kolejnymi etapami.
 
 ## Założenia projektowe
 
@@ -60,6 +60,17 @@ Otwórz utworzony plik HTML w przeglądarce. Wskaż punkty A i B na znanym wymia
 
 Zapisz pobrany JSON obok oryginalnego pliku projektu i obrazu, aby względna ścieżka `source_image` nadal była prawidłowa. Sprawdź skalę na drugim znanym wymiarze. Panel przyjmuje jednolitą skalę i nie prostuje zdjęć z perspektywą; nie traktuj go jako automatycznej rekonstrukcji rzutu.
 
+### Edytor geometrii na skalibrowanym rzucie
+
+Po kalibracji otwórz lokalny edytor geometrii, który osadza obraz i dane projektu w jednym pliku HTML:
+
+```bash
+floorplan-engine edit-geometry --project my_plan.calibrated.json --output my_plan.geometry.html
+```
+
+Otwórz HTML w przeglądarce. Możesz rysować ściany klikając ich początek i koniec, tworzyć pomieszczenia przez wskazywanie wierzchołków, umieszczać drzwi/okna/przejścia na wybranej ścianie, przeciągać uchwyty istniejących ścian i wierzchołków pomieszczeń oraz otworów, edytować właściwości zaznaczonego obiektu, usuwać obiekty i cofać ostatnie zmiany. Przyciąganie do końców ścian jest domyślnie włączone.
+
+Przycisk „Waliduj i pobierz JSON” sprawdza identyfikatory, długości ścian, obrysy pomieszczeń i położenie otworów przed pobraniem nowego pliku `.geometry.json`. Plik źródłowy nie jest nadpisywany. Zapisz wyeksportowany JSON obok obrazu albo zachowaj ścieżkę `source_image` prawidłową względem lokalizacji JSON. Następnie uruchom `floorplan-engine check plan.geometry.json --json` i wygeneruj PDF. Edytor nie rozpoznaje automatycznie ścian z pikseli i nie koryguje perspektywy; geometria nadal wymaga weryfikacji przez człowieka.
 ### Kontrola geometrii przed eksportem
 
 ```bash

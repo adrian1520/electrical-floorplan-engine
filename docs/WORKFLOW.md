@@ -39,6 +39,14 @@ W przypadku zdjęć z perspektywą pojedyncza skala może być niewystarczająca
 4. Oznacz niepewne fragmenty do potwierdzenia.
 5. Porównaj odległości i wymiary modelu z wymiarami źródłowymi.
 
+### Edytor wizualny
+Preferowany sposób ręcznego opracowania geometrii to edytor wizualny wygenerowany z projektu skalibrowanego:
+
+```bash
+floorplan-engine edit-geometry --project plan.calibrated.json --output plan.geometry.html
+```
+
+Edytor osadza podkład w HTML, zapisuje położenia w milimetrach, obsługuje ściany, obrysy pomieszczeń i otwory przypisane do ścian. Istniejące obiekty można zaznaczać, przeciągać za żółte uchwyty, zmieniać ich właściwości, usuwać i cofać ostatnie operacje. Eksport tworzy nowy plik JSON; nie nadpisuje pliku wejściowego.
 ### Modelowanie ścian, drzwi, okien i pomieszczeń
 
 - Każda ściana ma stabilne ID oraz odcinek od punktu początkowego do końcowego; opcjonalnie wpisz grubość w mm i rolę architektoniczną.

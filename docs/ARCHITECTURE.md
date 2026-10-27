@@ -72,11 +72,12 @@ Dostępne moduły:
 - `models.py`: zwalidowane punkty, ściany, otwory, proste wielokąty pomieszczeń, symbole i projekt w mm;
 - `calibration.py`: jednolita kalibracja piksel → mm z jawnym punktem początku układu;
 - `calibration_ui.py`: generator samodzielnego panelu HTML, z osadzonym obrazem, wyborem punktów i eksportem skalibrowanego JSON;
+- `geometry_ui.py`: offline edytor geometrii, rysowanie i edycja ścian, pomieszczeń i otworów oraz walidacja przed eksportem JSON;
 - `rendering/pdf.py`: jednostronicowy PDF A4 poziomo, podkład rastrowy, ściany, schematyczne otwory i etykiety pomieszczeń;
-- `cli.py`: walidacja JSON i uruchomienie renderera.
+- `cli.py`: kalibracja, generowanie UI, kontrola geometrii i uruchomienie renderera.
 
 Ograniczenia bieżącej wersji:
-- nie ma automatycznego wykrywania ścian z obrazu;
+- nie ma automatycznego wykrywania ścian z obrazu; geometria jest rysowana ręcznie w edytorze;
 - kalibracja jest jednolita i nie koryguje perspektywy; panel wizualny jedynie ułatwia wybór punktów;
 - PDF jest dopasowywany do arkusza, a nie drukowany w gwarantowanej skali 1:1;
 - symbole są schematycznymi znacznikami, a nie zatwierdzoną biblioteką normową.

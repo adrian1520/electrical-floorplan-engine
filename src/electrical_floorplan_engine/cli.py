@@ -13,6 +13,7 @@ from pydantic import ValidationError
 
 from electrical_floorplan_engine.calibration import PixelPoint, ScaleCalibration
 from electrical_floorplan_engine.calibration_ui import create_calibration_ui
+from electrical_floorplan_engine.geometry_ui import create_geometry_ui
 from electrical_floorplan_engine.geometry import validate_geometry
 from electrical_floorplan_engine.models import FloorplanProject
 from electrical_floorplan_engine.rendering.pdf import render_pdf
@@ -47,6 +48,30 @@ def _calibration_ui(argv: Sequence[str]) -> int:
         output = create_calibration_ui(args.project, args.output)
     except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
         logger.error("Cannot create calibration UI: %s", exc)
+        return 2
+
+    print(output)
+    return 0
+
+
+def _edit_geometry(argv: Sequence[str]) -> int:
+    """Create a self-contained HTML editor for calibrated floorplan geometry."""
+    parser = argparse.ArgumentParser(
+        prog="floorplan-engine edit-geometry",
+        description="Generate an offline click-and-drag editor for calibrated geometry.",
+    )
+    parser.add_argument("--project", type=Path, required=True, help="Calibrated project JSON")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="HTML output path (default: project name with .geometry.html suffix)",
+    )
+    args = parser.parse_args(argv)
+
+    try:
+        output = create_geometry_ui(args.project, args.output)
+    except (OSError, json.JSONDecodeError, ValidationError, TypeError, ValueError) as exc:
+        logger.error("Cannot create geometry editor: %s", exc)
         return 2
 
     print(output)
@@ -174,6 +199,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.WARNING)
     if arguments and arguments[0] == "calibrate-ui":
         return _calibration_ui(arguments[1:])
+    if arguments and arguments[0] == "edit-geometry":
+        return _edit_geometry(arguments[1:])
     if arguments and arguments[0] == "calibrate":
         return _calibrate(arguments[1:])
     if arguments and arguments[0] == "check":
