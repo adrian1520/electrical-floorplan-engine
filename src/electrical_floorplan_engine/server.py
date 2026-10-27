@@ -28,7 +28,8 @@ _INDEX_HTML = """<!doctype html>
 <meta name="color-scheme" content="light">
 <title>Electrical Floorplan Engine — projekty</title>
 <style>
-:root { color-scheme: light; font-family: system-ui, sans-serif; color: #17212b; background: #f3f5f7; }
+:root { color-scheme: light; font-family: system-ui, sans-serif; color: #17212b;
+        background: #f3f5f7; }
 body { max-width: 900px; margin: 0 auto; padding: 24px; }
 h1 { margin-bottom: 6px; } p { line-height: 1.5; }
 ul { list-style: none; margin: 20px 0; padding: 0; display: grid; gap: 10px; }
@@ -40,10 +41,12 @@ code { overflow-wrap: anywhere; }
 </head>
 <body>
 <h1>Electrical Floorplan Engine</h1>
-<p>Wybierz skalibrowany projekt z katalogu roboczego backendu. Zapis z edytora trafia do pliku JSON na serwerze.</p>
+<p>Wybierz skalibrowany projekt z katalogu roboczego backendu. Zapis z edytora trafia
+   do pliku JSON na serwerze.</p>
 <p id="status" class="status" role="status" aria-live="polite">Wczytywanie projektów…</p>
 <ul id="projects"></ul>
-<p class="status">Aby dodać projekt, skopiuj plik JSON oraz obraz źródłowy do katalogu roboczego, a następnie odśwież tę stronę.</p>
+<p class="status">Aby dodać projekt, skopiuj plik JSON oraz obraz źródłowy do katalogu
+roboczego, a następnie odśwież tę stronę.</p>
 <script>
 "use strict";
 (async () => {
@@ -83,7 +86,8 @@ code { overflow-wrap: anywhere; }
       }
       list.appendChild(item);
     }
-    status.textContent = "Projekty: " + projects.length + "; gotowe do edycji: " + editableCount + ".";
+    status.textContent =
+      "Projekty: " + projects.length + "; gotowe do edycji: " + editableCount + ".";
   } catch (error) {
     status.className = "status error";
     status.textContent = "Nie można wczytać projektów: " + error.message;
@@ -151,7 +155,9 @@ def create_app(workspace: str | Path) -> FastAPI:
             )
         mime_type, _ = mimetypes.guess_type(image.name)
         if not mime_type or not mime_type.startswith("image/") or mime_type == "image/svg+xml":
-            raise HTTPException(status_code=415, detail="Source file must be a supported raster image.")
+            raise HTTPException(
+                status_code=415, detail="Source file must be a supported raster image."
+            )
         return image, mime_type
 
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
@@ -224,7 +230,9 @@ def create_app(workspace: str | Path) -> FastAPI:
                 revision=revision,
             )
         except (OSError, json.JSONDecodeError, ValidationError, TypeError, ValueError) as exc:
-            raise HTTPException(status_code=422, detail="Cannot build editor for this project.") from exc
+            raise HTTPException(
+                status_code=422, detail="Cannot build editor for this project."
+            ) from exc
         # A second read catches edits made while the page was being assembled.
         if _revision(path.read_bytes()) != revision:
             raise HTTPException(status_code=409, detail="Project changed while opening the editor.")

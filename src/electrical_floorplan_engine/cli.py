@@ -90,7 +90,11 @@ def _serve(argv: Sequence[str]) -> int:
         default=Path("workspace"),
         help="Directory containing project JSON and source raster files (default: ./workspace)",
     )
-    parser.add_argument("--host", default="127.0.0.1", help="Bind address (default: localhost only)")
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Bind address (default: localhost only)",
+    )
     parser.add_argument("--port", type=int, default=8765, help="HTTP port (default: 8765)")
     parser.add_argument(
         "--log-level",
@@ -106,11 +110,15 @@ def _serve(argv: Sequence[str]) -> int:
 
         from electrical_floorplan_engine.server import create_app
     except ImportError:
-        logger.error("Backend dependencies are missing. Install them with: pip install -e '.[server]'")
+        logger.error(
+            "Backend dependencies are missing. Install them with: pip install -e '.[server]'"
+        )
         return 2
 
     if args.host not in {"127.0.0.1", "localhost", "::1"}:
-        logger.warning("The backend has no authentication; do not expose it to an untrusted network.")
+        logger.warning(
+            "The backend has no authentication; do not expose it to an untrusted network."
+        )
     try:
         app = create_app(args.workspace)
     except OSError as exc:
