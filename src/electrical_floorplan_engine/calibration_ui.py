@@ -45,7 +45,7 @@ button.primary:disabled { opacity: .45; cursor: not-allowed; }
 #stage { position: relative; margin: 0; }
 #plan-image { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
 #overlay { position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: manipulation; }
-.point-label { font: 700 16px system-ui, sans-serif; fill: white; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.point-label { font-weight: 700; font-family: system-ui, sans-serif; fill: white; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: .82rem; color: #465562; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
@@ -296,7 +296,7 @@ exportButton.addEventListener("click", () => {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   message.textContent = "Przygotowano skalibrowany JSON. Zapisz go obok oryginalnego pliku projektu i obrazu.";
   message.classList.remove("error");
 });
