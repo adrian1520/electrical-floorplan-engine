@@ -125,12 +125,15 @@ def render_pdf(project: FloorplanProject, output_path: str | Path) -> Path:
             mask="auto",
         )
 
-    # Wall centerlines are schematic; optional thickness remains explicit model metadata.
+    # Wall thickness is mapped to paper width but clamped for legibility at fitted scale.
     pdf.setStrokeColorRGB(0, 0, 0)
-    pdf.setLineWidth(0.45 * mm)
     for wall in project.walls:
         x1, y1 = xy(wall.start)
         x2, y2 = xy(wall.end)
+        wall_width = 0.45 * mm
+        if wall.thickness_mm is not None:
+            wall_width = max(0.45 * mm, min(3.0 * mm, wall.thickness_mm * mm * fit_scale))
+        pdf.setLineWidth(wall_width)
         pdf.line(x1, y1, x2, y2)
 
     # Openings are intervals along a host wall; all ranges are validated by the model.
@@ -152,7 +155,13 @@ def render_pdf(project: FloorplanProject, output_path: str | Path) -> Path:
 
         # Erase the schematic centerline through the opening.
         pdf.setStrokeColorRGB(1, 1, 1)
-        pdf.setLineWidth(2.0 * mm)
+        mask_width = 2.0 * mm
+        if wall.thickness_mm is not None:
+            mask_width = max(
+                mask_width,
+                min(3.8 * mm, wall.thickness_mm * mm * fit_scale + 0.6 * mm),
+            )
+        pdf.setLineWidth(mask_width)
         pdf.line(x1, y1, x2, y2)
         pdf.setStrokeColorRGB(0, 0, 0)
         pdf.setLineWidth(0.3 * mm)
