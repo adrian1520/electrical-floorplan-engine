@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from math import cos, radians, sin
+from math import cos, hypot, radians, sin
 from pathlib import Path
 
 from reportlab.lib.pagesizes import A4, landscape
@@ -18,6 +18,10 @@ def _bounds(project: FloorplanProject) -> tuple[float, float, float, float]:
     for wall in project.walls:
         points.extend((wall.start, wall.end))
     points.extend(symbol.position for symbol in project.symbols)
+    for room in project.rooms:
+        points.extend(room.vertices)
+        if room.label_position is not None:
+            points.append(room.label_position)
 
     if project.source_image and project.image_mm_per_pixel:
         image_width_px, image_height_px = ImageReader(project.source_image).getSize()
@@ -38,6 +42,25 @@ def _bounds(project: FloorplanProject) -> tuple[float, float, float, float]:
         min(point.y for point in points),
         max(point.x for point in points),
         max(point.y for point in points),
+    )
+
+
+def _opening_endpoints(
+    wall_start: PointMM, wall_end: PointMM, offset_mm: float, width_mm: float
+) -> tuple[PointMM, PointMM]:
+    dx = wall_end.x - wall_start.x
+    dy = wall_end.y - wall_start.y
+    length = hypot(dx, dy)
+    ux, uy = dx / length, dy / length
+    return (
+        PointMM(
+            x=wall_start.x + ux * offset_mm,
+            y=wall_start.y + uy * offset_mm,
+        ),
+        PointMM(
+            x=wall_start.x + ux * (offset_mm + width_mm),
+            y=wall_start.y + uy * (offset_mm + width_mm),
+        ),
     )
 
 
@@ -102,18 +125,81 @@ def render_pdf(project: FloorplanProject, output_path: str | Path) -> Path:
             mask="auto",
         )
 
-    # Wall geometry
+    # Wall centerlines are schematic; optional thickness remains explicit model metadata.
+    pdf.setStrokeColorRGB(0, 0, 0)
     pdf.setLineWidth(0.45 * mm)
     for wall in project.walls:
         x1, y1 = xy(wall.start)
         x2, y2 = xy(wall.end)
         pdf.line(x1, y1, x2, y2)
 
+    # Openings are intervals along a host wall; all ranges are validated by the model.
+    walls_by_id = {wall.id: wall for wall in project.walls}
+    for opening in project.openings:
+        wall = walls_by_id[opening.wall_id]
+        first, second = _opening_endpoints(
+            wall.start,
+            wall.end,
+            opening.offset_mm,
+            opening.width_mm,
+        )
+        x1, y1 = xy(first)
+        x2, y2 = xy(second)
+        dx, dy = x2 - x1, y2 - y1
+        page_length = hypot(dx, dy)
+        ux, uy = dx / page_length, dy / page_length
+        nx, ny = -uy, ux
+
+        # Erase the schematic centerline through the opening.
+        pdf.setStrokeColorRGB(1, 1, 1)
+        pdf.setLineWidth(2.0 * mm)
+        pdf.line(x1, y1, x2, y2)
+        pdf.setStrokeColorRGB(0, 0, 0)
+        pdf.setLineWidth(0.3 * mm)
+
+        if opening.kind == "window":
+            frame_offset = 1.1 * mm
+            pdf.line(
+                x1 + nx * frame_offset,
+                y1 + ny * frame_offset,
+                x2 + nx * frame_offset,
+                y2 + ny * frame_offset,
+            )
+            pdf.line(
+                x1 - nx * frame_offset,
+                y1 - ny * frame_offset,
+                x2 - nx * frame_offset,
+                y2 - ny * frame_offset,
+            )
+        elif opening.kind == "door":
+            hinge_x, hinge_y = (x1, y1) if opening.hinge_at == "start" else (x2, y2)
+            side = 1.0 if opening.swing_side == "left" else -1.0
+            pdf.line(
+                hinge_x,
+                hinge_y,
+                hinge_x + nx * page_length * side,
+                hinge_y + ny * page_length * side,
+            )
+
+        if opening.label:
+            pdf.setFont("Helvetica", 6)
+            pdf.drawCentredString((x1 + x2) / 2, (y1 + y2) / 2 + 1.8 * mm, opening.label[:32])
+
+    # Room labels are placed at their area centroid or at an explicit model point.
+    pdf.setFillColorRGB(0, 0, 0)
+    for room in project.rooms:
+        label_point = room.label_position or room.centroid
+        label_x, label_y = xy(label_point)
+        pdf.setFont("Helvetica-Bold", 8)
+        pdf.drawCentredString(label_x, label_y, room.name[:48])
+
     # Symbols are schematic until a formal symbol library is agreed.
     radius = max(1.6 * mm, min(2.5 * mm, fit_scale * 2.0 * mm))
     for symbol in project.symbols:
         x, y = xy(symbol.position)
         angle = radians(symbol.rotation_deg)
+        pdf.setStrokeColorRGB(0, 0, 0)
+        pdf.setFillColorRGB(0, 0, 0)
         pdf.setLineWidth(0.3 * mm)
         if symbol.kind == "light":
             pdf.circle(x, y, radius, stroke=1, fill=0)
@@ -138,7 +224,11 @@ def render_pdf(project: FloorplanProject, output_path: str | Path) -> Path:
     pdf.drawString(
         margin,
         footer_y,
-        f"Jednostki modelu: mm | Ściany: {len(project.walls)} | Symbole: {len(project.symbols)}",
+        (
+            f"Jednostki modelu: mm | Ściany: {len(project.walls)} "
+            f"| Otwory: {len(project.openings)} | Pomieszczenia: {len(project.rooms)} "
+            f"| Symbole: {len(project.symbols)}"
+        ),
     )
     if project.notes:
         pdf.drawRightString(page_width - margin, footer_y, project.notes[0][:100])
