@@ -67,9 +67,7 @@ class OpeningMM(BaseModel):
 
 
 def _cross(first: PointMM, second: PointMM, third: PointMM) -> float:
-    return (second.x - first.x) * (third.y - first.y) - (
-        second.y - first.y
-    ) * (third.x - first.x)
+    return (second.x - first.x) * (third.y - first.y) - (second.y - first.y) * (third.x - first.x)
 
 
 def _on_segment(first: PointMM, second: PointMM, point: PointMM) -> bool:
@@ -229,10 +227,7 @@ class FloorplanProject(BaseModel):
     @model_validator(mode="after")
     def require_unique_ids(self) -> FloorplanProject:
         """Require unique IDs across all project objects."""
-        ids = [
-            item.id
-            for item in [*self.walls, *self.openings, *self.rooms, *self.symbols]
-        ]
+        ids = [item.id for item in [*self.walls, *self.openings, *self.rooms, *self.symbols]]
         if len(ids) != len(set(ids)):
             raise ValueError("Object IDs must be unique within a project.")
         return self
