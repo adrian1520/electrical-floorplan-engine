@@ -34,9 +34,7 @@ def test_calibrate_command_writes_scale_and_origin(tmp_path: Path, capsys) -> No
     assert "20 mm/pixel" in capsys.readouterr().out
 
 
-def test_check_command_reports_warnings_and_supports_strict_mode(
-    tmp_path: Path, capsys
-) -> None:
+def test_check_command_reports_warnings_and_supports_strict_mode(tmp_path: Path, capsys) -> None:
     project_path = tmp_path / "plan.json"
     project_path.write_text(
         json.dumps(
