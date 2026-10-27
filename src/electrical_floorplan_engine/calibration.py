@@ -29,7 +29,7 @@ class ScaleCalibration(BaseModel):
     origin_pixel: PixelPoint = Field(default_factory=lambda: PixelPoint(x=0, y=0))
 
     @model_validator(mode="after")
-    def validate_reference_segment(self) -> "ScaleCalibration":
+    def validate_reference_segment(self) -> ScaleCalibration:
         """Ensure the reference segment and its values are valid."""
         pixel_length = hypot(
             self.second_pixel.x - self.first_pixel.x,
