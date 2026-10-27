@@ -12,6 +12,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from electrical_floorplan_engine.calibration import PixelPoint, ScaleCalibration
+from electrical_floorplan_engine.calibration_ui import create_calibration_ui
 from electrical_floorplan_engine.geometry import validate_geometry
 from electrical_floorplan_engine.models import FloorplanProject
 from electrical_floorplan_engine.rendering.pdf import render_pdf
@@ -26,6 +27,30 @@ def _parse_pixel(value: str) -> PixelPoint:
         return PixelPoint(x=float(x_text), y=float(y_text))
     except (ValueError, TypeError) as exc:
         raise argparse.ArgumentTypeError("Pixel coordinates must use the form X,Y.") from exc
+
+
+def _calibration_ui(argv: Sequence[str]) -> int:
+    """Create a self-contained HTML page for visual image calibration."""
+    parser = argparse.ArgumentParser(
+        prog="floorplan-engine calibrate-ui",
+        description="Generate an offline point-and-click calibration page.",
+    )
+    parser.add_argument("--project", type=Path, required=True, help="Input project JSON")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="HTML output path (default: project name with .calibration.html suffix)",
+    )
+    args = parser.parse_args(argv)
+
+    try:
+        output = create_calibration_ui(args.project, args.output)
+    except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+        logger.error("Cannot create calibration UI: %s", exc)
+        return 2
+
+    print(output)
+    return 0
 
 
 def _calibrate(argv: Sequence[str]) -> int:
@@ -147,6 +172,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Dispatch calibration, validation, or the backward-compatible PDF renderer."""
     arguments = list(sys.argv[1:] if argv is None else argv)
     logging.basicConfig(level=logging.WARNING)
+    if arguments and arguments[0] == "calibrate-ui":
+        return _calibration_ui(arguments[1:])
     if arguments and arguments[0] == "calibrate":
         return _calibrate(arguments[1:])
     if arguments and arguments[0] == "check":
