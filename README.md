@@ -4,37 +4,48 @@ Narzędzie do przekształcania zdjęć lub skanów rzutów architektonicznych w 
 
 ## Status
 
-**Etap: fundament projektu.** Repozytorium zawiera dokumentację i konfigurację bazową. Silnik geometrii, kalibracja skali, biblioteka symboli oraz eksport PDF zostaną dodane etapami i objęte testami.
+**Etap: pierwszy pionowy przekrój funkcjonalny.** Dostępne są modele danych, kalibracja skali obrazu, renderowanie PDF z geometrią wektorową i skalibrowanym podkładem rastrowym, CLI oraz testy. Automatyczne rozpoznawanie ścian i docelowy katalog symboli są kolejnymi etapami.
 
 ## Założenia projektowe
 
 - **PDF jest formatem wyjściowym MVP** — dokument wektorowy, przygotowany do czytelnego wydruku.
-- Wszystkie współrzędne modelu są przechowywane w **milimetrach**; konwersja do punktów PDF następuje dopiero podczas eksportu.
-- Geometria, transformacje, walidacja i eksport muszą być deterministyczne i testowalne.
-- Model danych i pliki projektu są źródłem prawdy. Rozmowa z modelem językowym nie zastępuje trwałego modelu geometrycznego.
+- Wszystkie współrzędne modelu są przechowywane w **milimetrach**.
+- Geometria, transformacje, walidacja i eksport są deterministyczne i testowalne.
+- Model danych i pliki projektu są źródłem prawdy; rozmowa z modelem językowym nie zastępuje trwałego modelu geometrycznego.
 - Niepewne wymiary i nierozpoznane elementy są oznaczane do weryfikacji, a nie po cichu zgadywane.
-- Wynik jest dokumentacją pomocniczą; wymaga przeglądu przez osobę kompetentną przed użyciem wykonawczym.
-
-## Plan prac
-
-1. Specyfikacja, architektura, workflow i konfiguracja testów.
-2. Model danych w mm, walidacja i identyfikatory obiektów.
-3. Import obrazu, kalibracja skali i kontrola jakości.
-4. Reprezentacja ścian, otworów oraz symboli instalacji elektrycznej.
-5. Generowanie PDF z legendą, skalą i metryką arkusza.
-6. Testy regresyjne na kontrolnych rzutach i workflow dla zdjęć z iPhone'a.
+- PDF jest obecnie **dopasowywany do arkusza**. Nie gwarantuje skali wydruku 1:1; nie należy mierzyć wymiarów na wydruku.
+- Symbole w obecnym MVP są schematyczne i wymagają uzgodnienia z docelową legendą.
 
 ## Szybki start
 
-Wymagany Python: 3.11 lub nowszy. Utwórz środowisko wirtualne, zainstaluj pakiet wraz z zależnościami deweloperskimi i uruchom testy:
+Wymagany Python: 3.11 lub nowszy.
 
-- macOS/Linux: python -m venv .venv
-- macOS/Linux: source .venv/bin/activate
-- Windows PowerShell: .venv\\Scripts\\Activate.ps1
-- Instalacja: python -m pip install -e ".[dev]"
-- Testy: pytest
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows PowerShell: .venv\\Scripts\\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+pytest
+```
 
-Na etapie fundamentu nie ma jeszcze polecenia generującego PDF. Zostanie dodane wraz z pierwszym pionowym przekrojem funkcjonalnym.
+### Wygenerowanie demonstracyjnego PDF
+
+```bash
+floorplan-engine examples/demo_project.json --output outputs/demo.pdf
+```
+
+Przykładowy projekt zawiera wyłącznie syntetyczną geometrię. Nie jest projektem wykonawczym.
+
+### Podkład rastrowy i kalibracja
+
+Plik JSON projektu może zawierać:
+- `source_image`: ścieżkę do lokalnego obrazu;
+- `image_mm_per_pixel`: skalę kalibracji w mm/piksel;
+- `image_origin_pixel_x` i `image_origin_pixel_y`: współrzędne piksela odpowiadającego punktowi (0, 0) modelu.
+
+Kalibrację można obliczyć przez `ScaleCalibration` z modułu `electrical_floorplan_engine.calibration`. Punkty obrazu mają początek w lewym górnym rogu i oś Y skierowaną w dół; model ma oś Y skierowaną w górę. Przy zdjęciu z perspektywą jednolita skala może nie wystarczyć — najpierw należy wyprostować obraz.
+
+Przykład projektu z podkładem wymaga podania skali i punktu początku układu. Renderer dopasowuje całość do A4 poziomo, dlatego wynik nie jest gwarantowanym wydrukiem 1:1.
 
 ## Dokumentacja
 
