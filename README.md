@@ -89,3 +89,4 @@ Renderer dopasowuje rysunek do A4 poziomo. Wynik nie jest gwarantowanym wydrukie
 - [Architektura](docs/ARCHITECTURE.md)
 - [Workflow opracowania rzutu](docs/WORKFLOW.md)
 - [Decyzje techniczne](docs/DECISIONS.md)
+- [CI i kontrola jakości](docs/CI.md)
