@@ -1,11 +1,37 @@
+import asyncio
 import base64
 import hashlib
 import json
 from pathlib import Path
 
-from fastapi.testclient import TestClient
+import httpx
 
 from electrical_floorplan_engine.server import create_app
+
+
+class _ASGIClient:
+    """Small synchronous adapter around HTTPX's non-deprecated ASGI transport."""
+
+    def __init__(self, app: object) -> None:
+        self._app = app
+
+    def get(self, path: str, **kwargs: object) -> httpx.Response:
+        return self._request("GET", path, **kwargs)
+
+    def put(self, path: str, **kwargs: object) -> httpx.Response:
+        return self._request("PUT", path, **kwargs)
+
+    def _request(self, method: str, path: str, **kwargs: object) -> httpx.Response:
+        async def send() -> httpx.Response:
+            transport = httpx.ASGITransport(app=self._app)
+            async with httpx.AsyncClient(
+                transport=transport,
+                base_url="http://testserver",
+            ) as client:
+                return await client.request(method, path, **kwargs)
+
+        return asyncio.run(send())
+
 
 _ONE_PIXEL_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/aXcAAAAASUVORK5CYII="
@@ -46,7 +72,7 @@ def _workspace(tmp_path: Path, *, image_name: str = "plan.png") -> tuple[Path, P
 
 def test_backend_lists_projects_serves_editor_and_raster(tmp_path: Path) -> None:
     _, image_path = _workspace(tmp_path)
-    client = TestClient(create_app(tmp_path))
+    client = _ASGIClient(create_app(tmp_path))
 
     index = client.get("/")
     projects = client.get("/api/projects")
@@ -133,7 +159,7 @@ def test_backend_rejects_image_outside_workspace(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
-    client = TestClient(create_app(workspace))
+    client = _ASGIClient(create_app(workspace))
 
     assert client.get("/editor/plan").status_code == 403
     assert client.get("/api/projects/plan/image").status_code == 403
