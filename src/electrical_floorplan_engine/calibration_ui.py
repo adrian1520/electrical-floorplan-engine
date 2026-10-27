@@ -309,9 +309,7 @@ def _base64_text(value: str) -> str:
     return base64.b64encode(value.encode("utf-8")).decode("ascii")
 
 
-def create_calibration_ui(
-    project_path: str | Path, output_path: str | Path | None = None
-) -> Path:
+def create_calibration_ui(project_path: str | Path, output_path: str | Path | None = None) -> Path:
     """Build a self-contained HTML calibration tool from a project JSON and its raster."""
     project_file = Path(project_path).resolve()
     raw = json.loads(project_file.read_text(encoding="utf-8"))
@@ -339,8 +337,10 @@ def create_calibration_ui(
         .replace("__SOURCE_NAME_BASE64__", filename_payload)
     )
 
-    output = Path(output_path) if output_path is not None else project_file.with_name(
-        f"{project_file.stem}.calibration.html"
+    output = (
+        Path(output_path)
+        if output_path is not None
+        else project_file.with_name(f"{project_file.stem}.calibration.html")
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(html, encoding="utf-8")
