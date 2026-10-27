@@ -38,7 +38,7 @@ def test_calibration_ui_embeds_image_and_project_without_network_assets(tmp_path
     html = output.read_text(encoding="utf-8")
 
     assert output == tmp_path / "plan.calibration.html"
-    assert 'data:image/png;base64,' in html
+    assert "data:image/png;base64," in html
     assert 'id="known-length"' in html
     assert 'id="overlay"' in html
     assert "Pobierz skalibrowany JSON" in html
