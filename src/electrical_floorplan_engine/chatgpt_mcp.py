@@ -218,10 +218,18 @@ def _validate_project(project_json: str) -> dict[str, Any]:
     return {"valid": True, "issues": issues, "project": project.model_dump(mode="json")}
 
 
-def _tool_meta() -> dict[str, Any]:
+def _widget_meta() -> dict[str, Any]:
+    """Expose the UI resource to tools invoked from inside the widget."""
     return {
         "ui": {"resourceUri": RESOURCE_URI},
         "openai/widgetAccessible": True,
+    }
+
+
+def _tool_meta() -> dict[str, Any]:
+    """Attach the UI resource and invocation labels to the widget-launch tool."""
+    return {
+        **_widget_meta(),
         "openai/toolInvocation/invoking": "Otwieranie edytora rzutu…",
         "openai/toolInvocation/invoked": "Edytor rzutu gotowy",
     }
@@ -254,6 +262,7 @@ def _tool_specs() -> list[types.Tool]:
             title="Lista projektów rzutów",
             description="Listuje projekty JSON dostępne w katalogu workspace backendu.",
             inputSchema=no_args,
+            _meta=_widget_meta(),
             annotations={"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
         ),
         types.Tool(
@@ -261,6 +270,7 @@ def _tool_specs() -> list[types.Tool]:
             title="Wczytaj projekt rzutu",
             description="Wczytuje projekt, jego rewizję i skalibrowany raster do edytora.",
             inputSchema=project_id_schema,
+            _meta=_widget_meta(),
             annotations={"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
         ),
         types.Tool(
@@ -283,6 +293,7 @@ def _tool_specs() -> list[types.Tool]:
                 "required": ["project_id", "revision", "project_json"],
                 "additionalProperties": False,
             },
+            _meta=_widget_meta(),
             annotations={"readOnlyHint": False, "destructiveHint": True, "openWorldHint": False},
         ),
         types.Tool(
@@ -297,6 +308,7 @@ def _tool_specs() -> list[types.Tool]:
                 "required": ["project_json"],
                 "additionalProperties": False,
             },
+            _meta=_widget_meta(),
             annotations={"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
         ),
     ]

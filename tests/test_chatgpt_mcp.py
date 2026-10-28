@@ -49,6 +49,15 @@ def test_mcp_editor_tool_declares_inline_ui_resource() -> None:
     specs = {tool.name: tool for tool in chatgpt_mcp._tool_specs()}
     tool_meta = specs["open_floorplan_editor"].model_dump(by_alias=True).get("_meta", {})
     assert tool_meta["ui"]["resourceUri"] == chatgpt_mcp.RESOURCE_URI
+    for name in (
+        "list_floorplan_projects",
+        "load_floorplan_project",
+        "save_floorplan_project",
+        "validate_floorplan_project",
+    ):
+        accessible_meta = specs[name].model_dump(by_alias=True).get("_meta", {})
+        assert accessible_meta["ui"]["resourceUri"] == chatgpt_mcp.RESOURCE_URI
+        assert accessible_meta["openai/widgetAccessible"] is True
     assert "project_json" in specs["save_floorplan_project"].inputSchema["properties"]
     assert getattr(specs["save_floorplan_project"].annotations, "readOnlyHint", True) is False
     assert chatgpt_mcp._WIDGET_PATH.is_file()
