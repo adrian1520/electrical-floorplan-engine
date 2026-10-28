@@ -124,6 +124,16 @@ Plik JSON projektu może zawierać `source_image`, `image_mm_per_pixel`, `image_
 
 Renderer dopasowuje rysunek do A4 poziomo. Wynik nie jest gwarantowanym wydrukiem 1:1; dokładny wydruk w określonej skali będzie osobnym, testowanym etapem.
 
+### ChatGPT Sandbox Beta (bez serwera)
+
+Podstawowy wariant beta nie wymaga wdrożenia backendu MCP ani żadnych połączeń runtime. Plik PDF/skan jest przetwarzany w bieżącej sesji Python/Data Analysis, a projekt jest przenoszony jako JSON. W razie potrzeby repozytorium generuje samodzielne pliki HTML do lokalnej kalibracji i ręcznej edycji; HTML nie jest osadzonym widżetem w rozmowie.
+
+- Instrukcja użycia w sesji ChatGPT: [docs/CHATGPT_SANDBOX_BETA.md](docs/CHATGPT_SANDBOX_BETA.md).
+- Pomocnicze funkcje sesji: [sandbox_beta/floorplan_session.py](sandbox_beta/floorplan_session.py).
+- Testy narzędzi kalibracji i edycji: [tests/test_sandbox_beta.py](tests/test_sandbox_beta.py).
+
+Repozytorium GitHub jest kanonicznym źródłem kodu i może przechowywać wybrane pliki JSON/raporty jako zewnętrzną pamięć projektu po zgodzie użytkownika. Nie zapisujemy skanów źródłowych/PDF domyślnie. Pliki sandboxa nie są trwałe między rozmowami, a GitHub nie jest automatycznie podłączony do bieżącego środowiska Python. Nie ma automatycznej synchronizacji.
+
 ## Dokumentacja
 
 - [Instrukcje dla agentów i współtwórców](AGENTS.md)
