@@ -82,6 +82,25 @@ floorplan-engine edit-geometry --project my_plan.calibrated.json --output my_pla
 
 HTML osadza wtedy obraz oraz dane projektu, działa bez sieci, a „Waliduj i pobierz JSON” pobiera kopię pliku .geometry.json; nie zapisuje jej automatycznie do pliku źródłowego. Oba tryby obsługują ręczne rysowanie ścian, obrysów pomieszczeń i otworów, przeciąganie uchwytów, edycję właściwości, usuwanie i cofanie ostatnich zmian. Edytor nie rozpoznaje automatycznie ścian z pikseli ani nie koryguje perspektywy.
 
+### Edytor osadzony w rozmowie ChatGPT (MCP Apps)
+
+Repozytorium zawiera także prototyp aplikacji MCP Apps, która wyświetla interaktywny edytor bezpośrednio w oknie rozmowy. To osobna integracja od lokalnego serwera HTTP:
+
+~~~bash
+python -m pip install -e ".[server]"
+export ELECTRICAL_FLOORPLAN_WORKSPACE="./workspace"
+export ELECTRICAL_FLOORPLAN_API_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+export MCP_ALLOWED_HOSTS="twoj-host.example"
+export MCP_ALLOWED_ORIGINS="https://twoj-host.example"
+uvicorn electrical_floorplan_engine.chatgpt_mcp:app --host 0.0.0.0 --port 8000
+~~~
+
+Powyższa komenda uruchamia endpoint MCP pod `/mcp`. Host musi zapewnić publiczny adres HTTPS albo użyć obsługiwanego Secure MCP Tunnel; ChatGPT nie łączy się bezpośrednio z serwerem dostępnym wyłącznie pod `127.0.0.1`. Ustaw `MCP_ALLOWED_HOSTS` i `MCP_ALLOWED_ORIGINS` dla faktycznej domeny, a bearer token skonfiguruj również w ustawieniach połączenia aplikacji. Nie wystawiaj endpointu bez tokenu ani nie umieszczaj tokenu w repozytorium.
+
+Po uruchomieniu endpointu dodaj go jako własny serwer MCP w ChatGPT, wykonaj skan narzędzi i wybierz `open_floorplan_editor` w nowej rozmowie. Widżet pozwala wybrać projekt z katalogu workspace, wyświetla podkład rastrowy, dodaje ściany, pomieszczenia i otwory, cofa zmiany, waliduje i zapisuje model do JSON po stronie backendu z kontrolą rewizji.
+
+Kod integracji znajduje się w `src/electrical_floorplan_engine/chatgpt_mcp.py`, a interfejs w `src/electrical_floorplan_engine/mcp_floorplan_widget.html`. Szczegółowe kroki wdrożenia oraz ograniczenia dostępności opisano w [instrukcji aplikacji ChatGPT](docs/CHATGPT_APP.md). Obsługa aplikacji z interaktywnym UI i narzędziami zapisującymi zależy od uprawnień konta/workspace ChatGPT; sam commit w repozytorium nie tworzy automatycznie działającego zdalnego endpointu.
+
 ### Kontrola geometrii przed eksportem
 
 ```bash

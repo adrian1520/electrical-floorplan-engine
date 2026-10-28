@@ -77,8 +77,10 @@ Dostępne moduły:
 - `calibration.py`: jednolita kalibracja piksel → mm z jawnym punktem początku układu;
 - `calibration_ui.py`: generator samodzielnego panelu HTML, z osadzonym obrazem, wyborem punktów i eksportem skalibrowanego JSON;
 - `geometry_ui.py`: klient edytora geometrii w trybie offline lub połączonym z backendem; rysowanie i edycja ścian, pomieszczeń i otworów;
+- `mcp_floorplan_widget.html`: zasób UI (MCP Apps) do wyświetlania edytora wewnątrz rozmowy;
 - `rendering/pdf.py`: jednostronicowy PDF A4 poziomo, podkład rastrowy, ściany, schematyczne otwory i etykiety pomieszczeń;
 - `server.py`: lokalne API projektów, dostarczanie obrazów, walidacja i atomowy zapis z kontrolą rewizji;
+- `chatgpt_mcp.py`: adapter MCP Apps z UI renderowanym wewnątrz kompatybilnego klienta czatu, narzędziami list/load/validate/save oraz kontrolą rewizji;
 - `cli.py`: backend HTTP, kalibracja, generowanie UI, kontrola geometrii i uruchomienie renderera.
 
 Ograniczenia bieżącej wersji:

@@ -21,6 +21,7 @@ image = [
 ]
 server = [
   "fastapi>=0.115,<1",
+  "mcp>=1.20,<2",
   "uvicorn>=0.30,<1",
 ]
 dev = [
@@ -36,6 +37,9 @@ floorplan-engine = "electrical_floorplan_engine.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+electrical_floorplan_engine = ["mcp_floorplan_widget.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

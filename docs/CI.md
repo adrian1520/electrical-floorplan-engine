@@ -23,6 +23,10 @@ ruff format --check .
 
 Każdy błąd walidacji lub testu powinien być naprawiony przy źródle i zabezpieczony testem regresyjnym, jeśli dotyczy zachowania aplikacji. Nie należy wyłączać reguł lintowania globalnie w celu ukrycia pojedynczego problemu formatowania; wyjątki powinny być ograniczone do pliku i uzasadnione.
 
+## MCP Apps / UI osadzone w rozmowie
+
+Testy modułu `tests/test_chatgpt_mcp.py` weryfikują deklarację zasobu UI, listowanie i wczytywanie projektu, wstrzykiwanie rastra, atomowy zapis z porównaniem rewizji, walidację geometrii oraz ograniczenie ścieżek do workspace. CI nie wdraża publicznego endpointu ani nie wykonuje pełnego testu iframe w kliencie ChatGPT; po hostowaniu należy przetestować połączenie, uwierzytelnienie i UI w docelowym workspace.
+
 ## Testy backendu edytora
 
 Zestaw deweloperski instaluje także dodatek serwerowy i HTTPX, aby testować API przez klienta ASGI. CI sprawdza listowanie projektów, dostarczanie rastra, zapis po walidacji, konflikty rewizji, wymagane nagłówki oraz odmowę dostępu do obrazów poza workspace. Samo przejście testów API nie zastępuje ręcznej kontroli użyteczności w przeglądarce.

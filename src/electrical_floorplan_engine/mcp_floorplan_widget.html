@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Electrical Floorplan Engine — edytor w ChatGPT</title>
+<style>
+:root {
+  color-scheme: light;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #17212b;
+  background: #f6f8fa;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 12px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+h1 { margin: 0; font-size: 1.1rem; }
+h2 { font-size: .95rem; margin: 0 0 8px; }
+p { line-height: 1.45; }
+small, .muted { color: #5b6773; font-size: .82rem; }
+.layout { display: grid; grid-template-columns: minmax(220px, 270px) minmax(0, 1fr); gap: 12px; align-items: start; }
+.panel { min-width: 0; border: 1px solid #d9e0e6; border-radius: 10px; background: white; padding: 12px; }
+.field { display: grid; gap: 5px; margin: 10px 0; }
+label { font-size: .84rem; font-weight: 650; }
+input, select, button { font: inherit; }
+input, select { width: 100%; min-height: 38px; border: 1px solid #acb8c3; border-radius: 7px; padding: 7px 8px; background: #fff; color: #17212b; }
+button { min-height: 38px; border: 1px solid #aeb9c4; border-radius: 7px; background: white; padding: 7px 10px; cursor: pointer; color: #17212b; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #80baf0; outline-offset: 2px; }
+button[aria-pressed="true"] { background: #155b8f; color: white; border-color: #155b8f; }
+button.primary { background: #12663b; color: white; border-color: #12663b; font-weight: 700; }
+button.danger { color: #a12f2a; border-color: #d9a9a5; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+.actions { display: flex; gap: 7px; flex-wrap: wrap; margin: 8px 0; }
+.tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.status { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 40px; padding: 9px; margin: 10px 0 0; background: #f0f4f7; border-radius: 7px; font-size: .83rem; line-height: 1.4; }
+.status.error { background: #fff0ee; color: #8c251e; }
+.status.success { background: #eaf6ef; color: #145b35; }
+#viewer { overflow: auto; border: 1px solid #c6d0d8; border-radius: 8px; background: #e5eaf0; min-height: 260px; max-height: 72vh; }
+#plan { display: block; width: 100%; min-width: 100%; touch-action: manipulation; user-select: none; cursor: crosshair; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 8px; font-size: .77rem; color: #52616e; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.dot { width: 9px; height: 9px; display: inline-block; border-radius: 50%; }
+#empty { padding: 28px 14px; text-align: center; color: #536270; }
+@media (max-width: 760px) {
+  body { padding: 8px; }
+  .layout { grid-template-columns: 1fr; }
+  #viewer { max-height: 55vh; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Edytor geometrii rzutu</h1>
+    <small>Interfejs osadzony w rozmowie · zapis przez MCP</small>
+  </div>
+  <button type="button" id="reload">Odśwież projekty</button>
+</header>
+<div class="layout">
+  <section class="panel">
+    <h2>Projekt</h2>
+    <div class="field">
+      <label for="project-picker">Skalibrowany projekt</label>
+      <select id="project-picker"><option value="">Ładowanie listy…</option></select>
+    </div>
+    <p class="muted" id="project-info">Wybierz projekt z katalogu workspace backendu.</p>
+    <h2>Narzędzie</h2>
+    <div class="tools" role="group" aria-label="Narzędzie edycji">
+      <button type="button" data-tool="select" aria-pressed="true">Wybierz</button>
+      <button type="button" data-tool="wall" aria-pressed="false">Ściana</button>
+      <button type="button" data-tool="room" aria-pressed="false">Pokój</button>
+      <button type="button" data-tool="opening" aria-pressed="false">Otwór</button>
+    </div>
+    <div class="field">
+      <label for="wall-thickness">Grubość nowej ściany (mm)</label>
+      <input id="wall-thickness" type="number" min="1" step="any" value="120">
+    </div>
+    <div class="field">
+      <label for="room-name">Nazwa nowego pomieszczenia</label>
+      <input id="room-name" maxlength="80" value="Nowe pomieszczenie">
+    </div>
+    <div class="field">
+      <label for="opening-wall">Ściana dla otworu</label>
+      <select id="opening-wall"><option value="">Najpierw dodaj ścianę</option></select>
+    </div>
+    <div class="field">
+      <label for="opening-kind">Typ otworu</label>
+      <select id="opening-kind">
+        <option value="door">Drzwi</option>
+        <option value="window">Okno</option>
+        <option value="passage">Przejście</option>
+        <option value="generic">Inny</option>
+      </select>
+    </div>
+    <div class="actions">
+      <button type="button" id="finish-room" disabled>Zamknij pokój</button>
+      <button type="button" id="cancel-drawing">Anuluj rysowanie</button>
+    </div>
+    <h2>Wybrany obiekt</h2>
+    <p class="muted" id="selection-info">Nie wybrano obiektu.</p>
+    <div class="actions">
+      <button type="button" class="danger" id="delete-selected" disabled>Usuń</button>
+      <button type="button" id="undo" disabled>Cofnij</button>
+    </div>
+    <h2>Zapis i eksport</h2>
+    <div class="actions">
+      <button type="button" class="primary" id="save" disabled>Zapisz na backendzie</button>
+      <button type="button" id="download" disabled>Pobierz JSON</button>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite">Łączenie z backendem…</div>
+    <p class="muted">Współrzędne modelu pozostają w mm. Backend ponownie waliduje projekt i odrzuca zapis, jeśli rewizja pliku jest nieaktualna.</p>
+  </section>
+  <section class="panel">
+    <div id="empty">Wybierz projekt, aby wczytać podkład i geometrię.</div>
+    <div id="viewer" hidden>
+      <svg id="plan" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Podkład i geometria rzutu"></svg>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:#154b73"></i>Ściany</span>
+      <span><i class="dot" style="background:#14804a"></i>Pomieszczenia</span>
+      <span><i class="dot" style="background:#c54c21"></i>Otwory</span>
+      <span><i class="dot" style="background:#c51f4a"></i>Symbole</span>
+      <span><i class="dot" style="background:#e3a008"></i>Zaznaczenie</span>
+    </div>
+  </section>
+</div>
+<script>
+"use strict";
+
+const RESOURCE_URI = "ui://electrical-floorplan/geometry-editor-v1.html";
+const $ = (id) => document.getElementById(id);
+const svg = $("plan");
+const picker = $("project-picker");
+const statusEl = $("status");
+const viewer = $("viewer");
+const empty = $("empty");
+let rpcId = 0;
+const pending = new Map();
+let projectList = [];
+let projectId = "";
+let project = null;
+let imageDataUrl = "";
+let imageName = "";
+let imageWidth = 0;
+let imageHeight = 0;
+let revision = "";
+let currentTool = "select";
+let selectedId = null;
+let firstPoint = null;
+let roomDraft = [];
+let undoStack = [];
+const MAX_UNDO = 60;
+
+function rpcNotify(method, params) {
+  window.parent.postMessage({ jsonrpc: "2.0", method, params }, "*");
+}
+function rpcRequest(method, params) {
+  return new Promise((resolve, reject) => {
+    const id = ++rpcId;
+    pending.set(id, { resolve, reject });
+    window.parent.postMessage({ jsonrpc: "2.0", id, method, params }, "*");
+  });
+}
+window.addEventListener("message", (event) => {
+  if (event.source !== window.parent) return;
+  const message = event.data;
+  if (!message || message.jsonrpc !== "2.0") return;
+  if (typeof message.id === "number") {
+    const entry = pending.get(message.id);
+    if (!entry) return;
+    pending.delete(message.id);
+    if (message.error) entry.reject(message.error);
+    else entry.resolve(message.result);
+    return;
+  }
+  if (message.method === "ui/notifications/tool-result") {
+    const result = message.params;
+    if (result && result.structuredContent && result.structuredContent.projects) {
+      updateProjectList(result.structuredContent.projects);
+    }
+  }
+});
+async function initializeBridge() {
+  await rpcRequest("ui/initialize", {
+    appInfo: { name: "electrical-floorplan-geometry-editor", version: "0.1.0" },
+    appCapabilities: {},
+    protocolVersion: "2026-01-26"
+  });
+  rpcNotify("ui/notifications/initialized", {});
+}
+const bridgeReady = initializeBridge();
+
+async function callTool(name, args = {}) {
+  await bridgeReady;
+  const result = await rpcRequest("tools/call", { name, arguments: args });
+  if (result && result.isError) {
+    const detail = result.content && result.content[0] ? result.content[0].text : "Błąd narzędzia MCP.";
+    throw new Error(detail);
+  }
+  return result && result.structuredContent ? result.structuredContent : {};
+}
+function setStatus(message, kind = "") {
+  statusEl.textContent = message;
+  statusEl.className = "status" + (kind ? " " + kind : "");
+}
+function updateProjectList(projects) {
+  projectList = Array.isArray(projects) ? projects : [];
+  const prior = picker.value;
+  picker.replaceChildren();
+  if (!projectList.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Brak projektów";
+    picker.appendChild(option);
+    $("project-info").textContent = "Dodaj skalibrowany JSON i obraz do katalogu workspace backendu.";
+    return;
+  }
+  for (const item of projectList) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = item.title + (item.editable ? "" : " · niedostępny");
+    option.disabled = !item.editable;
+    picker.appendChild(option);
+  }
+  const preferred = projectList.find(item => item.id === prior && item.editable)
+    || projectList.find(item => item.editable);
+  if (preferred) {
+    picker.value = preferred.id;
+    if (preferred.id !== projectId) loadProject(preferred.id);
+  } else {
+    $("project-info").textContent = "Brak projektu gotowego do edycji. Sprawdź skalę i ścieżkę source_image.";
+  }
+}
+async function reloadProjects() {
+  setStatus("Wczytywanie listy projektów…");
+  try {
+    const response = await callTool("list_floorplan_projects");
+    updateProjectList(response.projects || []);
+    if (!projectList.length) setStatus("Backend nie znalazł plików JSON w katalogu workspace.");
+    else setStatus("Lista projektów wczytana.");
+  } catch (error) {
+    setStatus("Nie można wczytać projektów: " + error.message, "error");
+  }
+}
+function loadSnapshot() {
+  return JSON.parse(JSON.stringify(project));
+}
+function saveUndo() {
+  if (!project) return;
+  undoStack.push(loadSnapshot());
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  $("undo").disabled = undoStack.length === 0;
+}
+function idFor(prefix) {
+  const used = new Set([
+    ...project.walls, ...project.rooms, ...project.openings, ...(project.symbols || [])
+  ].map(item => item.id));
+  let index = 1;
+  while (used.has(prefix + "-" + index)) index += 1;
+  return prefix + "-" + index;
+}
+function wallLength(wall) {
+  return Math.hypot(wall.end.x - wall.start.x, wall.end.y - wall.start.y);
+}
+function mmToPx(point) {
+  return {
+    x: point.x / Number(project.image_mm_per_pixel) + Number(project.image_origin_pixel_x || 0),
+    y: Number(project.image_origin_pixel_y || 0) - point.y / Number(project.image_mm_per_pixel)
+  };
+}
+function pxToMm(point) {
+  return {
+    x: (point.x - Number(project.image_origin_pixel_x || 0)) * Number(project.image_mm_per_pixel),
+    y: (Number(project.image_origin_pixel_y || 0) - point.y) * Number(project.image_mm_per_pixel)
+  };
+}
+function clientPoint(event) {
+  const rect = svg.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * imageWidth / rect.width,
+    y: (event.clientY - rect.top) * imageHeight / rect.height
+  };
+}
+function createSvg(name, attrs = {}) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+  return node;
+}
+function wallPoint(wall, alongMm) {
+  const length = wallLength(wall);
+  const ratio = length ? alongMm / length : 0;
+  return {
+    x: wall.start.x + (wall.end.x - wall.start.x) * ratio,
+    y: wall.start.y + (wall.end.y - wall.start.y) * ratio
+  };
+}
+function refreshWallOptions() {
+  const prior = $("opening-wall").value;
+  const select = $("opening-wall");
+  select.replaceChildren();
+  for (const wall of project ? project.walls : []) {
+    const option = document.createElement("option");
+    option.value = wall.id;
+    option.textContent = wall.id;
+    select.appendChild(option);
+  }
+  if (prior && [...select.options].some(option => option.value === prior)) select.value = prior;
+}
+function render() {
+  if (!project || !imageWidth || !imageHeight) return;
+  svg.replaceChildren();
+  svg.setAttribute("viewBox", "0 0 " + imageWidth + " " + imageHeight);
+  svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+  svg.style.aspectRatio = imageWidth + " / " + imageHeight;
+  svg.style.height = "auto";
+  svg.appendChild(createSvg("image", {
+    href: imageDataUrl, x: 0, y: 0, width: imageWidth, height: imageHeight,
+    preserveAspectRatio: "none"
+  }));
+  for (const room of project.rooms || []) {
+    const pixels = room.vertices.map(mmToPx);
+    svg.appendChild(createSvg("polygon", {
+      points: pixels.map(p => p.x + "," + p.y).join(" "),
+      fill: "rgba(20,128,74,0.16)",
+      stroke: room.id === selectedId ? "#e3a008" : "#14804a",
+      "stroke-width": room.id === selectedId ? 4 : 2,
+      "vector-effect": "non-scaling-stroke",
+      "data-object-id": room.id
+    }));
+  }
+  for (const wall of project.walls || []) {
+    const start = mmToPx(wall.start);
+    const end = mmToPx(wall.end);
+    svg.appendChild(createSvg("line", {
+      x1: start.x, y1: start.y, x2: end.x, y2: end.y,
+      stroke: wall.id === selectedId ? "#e3a008" : "#154b73",
+      "stroke-width": wall.id === selectedId ? 5 : 3,
+      "stroke-linecap": "round",
+      "vector-effect": "non-scaling-stroke",
+      "data-object-id": wall.id
+    }));
+  }
+  for (const opening of project.openings || []) {
+    const host = project.walls.find(wall => wall.id === opening.wall_id);
+    if (!host) continue;
+    const start = mmToPx(wallPoint(host, opening.offset_mm));
+    const end = mmToPx(wallPoint(host, opening.offset_mm + opening.width_mm));
+    svg.appendChild(createSvg("line", {
+      x1: start.x, y1: start.y, x2: end.x, y2: end.y,
+      stroke: opening.id === selectedId ? "#e3a008" : "#c54c21",
+      "stroke-width": 7, "stroke-linecap": "butt",
+      "vector-effect": "non-scaling-stroke", "data-object-id": opening.id
+    }));
+  }
+  for (const symbol of project.symbols || []) {
+    const point = mmToPx(symbol.position);
+    svg.appendChild(createSvg("circle", {
+      cx: point.x, cy: point.y, r: 5,
+      fill: symbol.id === selectedId ? "#e3a008" : "#c51f4a",
+      "vector-effect": "non-scaling-stroke", "data-object-id": symbol.id
+    }));
+  }
+  if (firstPoint) {
+    svg.appendChild(createSvg("circle", {
+      cx: firstPoint.x, cy: firstPoint.y, r: 5, fill: "#e3a008",
+      stroke: "#fff", "stroke-width": 1, "vector-effect": "non-scaling-stroke"
+    }));
+  }
+  for (const point of roomDraft) {
+    svg.appendChild(createSvg("circle", {
+      cx: point.x, cy: point.y, r: 4, fill: "#e3a008",
+      stroke: "#fff", "stroke-width": 1, "vector-effect": "non-scaling-stroke"
+    }));
+  }
+}
+function showSelection() {
+  const all = project ? [
+    ...project.walls.map(item => ({ type: "ściana", item })),
+    ...project.rooms.map(item => ({ type: "pomieszczenie", item })),
+    ...project.openings.map(item => ({ type: "otwór", item })),
+    ...(project.symbols || []).map(item => ({ type: "symbol", item }))
+  ] : [];
+  const found = all.find(entry => entry.item.id === selectedId);
+  $("selection-info").textContent = found
+    ? found.type + ": " + found.item.id + (found.item.name ? " · " + found.item.name : "")
+    : "Nie wybrano obiektu.";
+  $("delete-selected").disabled = !found;
+}
+async function loadProject(id) {
+  if (!id) return;
+  setStatus("Wczytywanie projektu i podkładu…");
+  try {
+    const data = await callTool("load_floorplan_project", { project_id: id });
+    projectId = data.id;
+    project = data.project;
+    revision = data.revision;
+    imageDataUrl = data.image_data_url;
+    imageName = data.image_name || "rzut";
+    undoStack = [];
+    selectedId = null;
+    firstPoint = null;
+    roomDraft = [];
+    $("undo").disabled = true;
+    $("delete-selected").disabled = true;
+    $("save").disabled = false;
+    $("download").disabled = false;
+    $("finish-room").disabled = true;
+    $("project-info").textContent =
+      imageName + " · skala " + Number(project.image_mm_per_pixel).toPrecision(5) + " mm/px";
+    empty.hidden = true;
+    viewer.hidden = false;
+    const probe = new Image();
+    probe.onload = () => {
+      imageWidth = probe.naturalWidth;
+      imageHeight = probe.naturalHeight;
+      refreshWallOptions();
+      render();
+    };
+    probe.onerror = () => setStatus("Projekt wczytany, ale nie można odczytać osadzonego obrazu.", "error");
+    probe.src = imageDataUrl;
+    setStatus("Wczytano " + project.title + ". Zapis aktualizuje plik źródłowy na backendzie.", "success");
+    picker.value = id;
+  } catch (error) {
+    setStatus("Nie można wczytać projektu: " + error.message, "error");
+  }
+}
+function findObject(id) {
+  if (!project || !id) return null;
+  for (const [type, values] of [
+    ["wall", project.walls], ["room", project.rooms],
+    ["opening", project.openings], ["symbol", project.symbols || []]
+  ]) {
+    const item = values.find(candidate => candidate.id === id);
+    if (item) return { type, item };
+  }
+  return null;
+}
+function validateLocal() {
+  if (!project) return ["Najpierw wczytaj projekt."];
+  const all = [
+    ...project.walls, ...project.rooms, ...project.openings, ...(project.symbols || [])
+  ];
+  const ids = all.map(item => item.id);
+  const errors = [];
+  if (ids.some(id => !id) || new Set(ids).size !== ids.length) {
+    errors.push("Identyfikatory obiektów muszą być niepuste i unikalne.");
+  }
+  for (const wall of project.walls) {
+    if (!Number.isFinite(wall.start.x) || !Number.isFinite(wall.start.y)
+        || !Number.isFinite(wall.end.x) || !Number.isFinite(wall.end.y)
+        || wallLength(wall) <= 1e-7) errors.push("Ściana " + wall.id + " ma zerową lub nieprawidłową długość.");
+  }
+  for (const opening of project.openings) {
+    const wall = project.walls.find(item => item.id === opening.wall_id);
+    if (!wall) { errors.push("Otwór " + opening.id + " nie wskazuje istniejącej ściany."); continue; }
+    if (opening.offset_mm < 0 || opening.width_mm <= 0
+        || opening.offset_mm + opening.width_mm > wallLength(wall) + 1e-6) {
+      errors.push("Otwór " + opening.id + " wykracza poza ścianę.");
+    }
+  }
+  return errors;
+}
+function setTool(tool) {
+  currentTool = tool;
+  for (const button of document.querySelectorAll("[data-tool]")) {
+    button.setAttribute("aria-pressed", String(button.dataset.tool === tool));
+  }
+  firstPoint = null;
+  roomDraft = [];
+  $("finish-room").disabled = tool !== "room";
+  render();
+}
+document.querySelectorAll("[data-tool]").forEach(button => {
+  button.addEventListener("click", () => setTool(button.dataset.tool));
+});
+picker.addEventListener("change", () => loadProject(picker.value));
+$("reload").addEventListener("click", reloadProjects);
+$("cancel-drawing").addEventListener("click", () => {
+  firstPoint = null;
+  roomDraft = [];
+  $("finish-room").disabled = currentTool !== "room";
+  render();
+  setStatus("Anulowano bieżące rysowanie.");
+});
+$("finish-room").addEventListener("click", () => {
+  if (!project || roomDraft.length < 3) {
+    setStatus("Pomieszczenie wymaga co najmniej trzech wierzchołków.", "error");
+    return;
+  }
+  saveUndo();
+  const name = $("room-name").value.trim() || "Pomieszczenie";
+  project.rooms.push({
+    id: idFor("room"),
+    name,
+    vertices: roomDraft.map(pxToMm)
+  });
+  roomDraft = [];
+  firstPoint = null;
+  render();
+  refreshWallOptions();
+  setStatus("Dodano pomieszczenie. Użyj „Zapisz na backendzie”, aby utrwalić zmiany.", "success");
+});
+svg.addEventListener("click", (event) => {
+  if (!project || !imageWidth || !imageHeight) return;
+  const point = clientPoint(event);
+  if (currentTool === "select") {
+    const objectId = event.target && event.target.getAttribute("data-object-id");
+    selectedId = objectId || null;
+    showSelection();
+    render();
+    return;
+  }
+  if (currentTool === "wall") {
+    if (!firstPoint) {
+      firstPoint = point;
+      render();
+      setStatus("Wskaż koniec ściany.");
+      return;
+    }
+    const start = pxToMm(firstPoint);
+    const end = pxToMm(point);
+    if (Math.hypot(end.x - start.x, end.y - start.y) < 1e-6) {
+      setStatus("Punkty ściany muszą być różne.", "error");
+      return;
+    }
+    saveUndo();
+    project.walls.push({
+      id: idFor("wall"), start, end,
+      thickness_mm: Number($("wall-thickness").value) || null,
+      role: "unknown"
+    });
+    firstPoint = null;
+    refreshWallOptions();
+    render();
+    setStatus("Dodano ścianę. Zapisz projekt, aby utrwalić zmiany.", "success");
+    return;
+  }
+  if (currentTool === "room") {
+    roomDraft.push(point);
+    $("finish-room").disabled = roomDraft.length < 3;
+    render();
+    setStatus("Wierzchołki pomieszczenia: " + roomDraft.length + ". Kliknij „Zamknij pokój”, aby zakończyć.");
+    return;
+  }
+  if (currentTool === "opening") {
+    const wallId = $("opening-wall").value;
+    const wall = project.walls.find(item => item.id === wallId);
+    if (!wall) {
+      setStatus("Wybierz ścianę, na której umieścić otwór.", "error");
+      return;
+    }
+    if (!firstPoint) {
+      firstPoint = point;
+      render();
+      setStatus("Wskaż drugi koniec otworu na wybranej ścianie.");
+      return;
+    }
+    const a = pxToMm(firstPoint);
+    const b = pxToMm(point);
+    const dx = wall.end.x - wall.start.x;
+    const dy = wall.end.y - wall.start.y;
+    const length = wallLength(wall);
+    const projected = [a, b].map(p =>
+      ((p.x - wall.start.x) * dx + (p.y - wall.start.y) * dy) / length
+    ).sort((x, y) => x - y);
+    const offset = Math.max(0, Math.min(length, projected[0]));
+    const end = Math.max(offset, Math.min(length, projected[1]));
+    if (end - offset <= 1e-6) {
+      setStatus("Szerokość otworu musi być większa od zera.", "error");
+      return;
+    }
+    saveUndo();
+    project.openings.push({
+      id: idFor("opening"),
+      wall_id: wall.id,
+      kind: $("opening-kind").value,
+      offset_mm: offset,
+      width_mm: end - offset,
+      hinge_at: "start",
+      swing_side: "left",
+      label: null,
+      ...( $("opening-kind").value === "window" ? { sill_height_mm: 900 } : {})
+    });
+    firstPoint = null;
+    render();
+    setStatus("Dodano otwór na ścianie " + wall.id + ". Zapisz projekt, aby utrwalić zmiany.", "success");
+  }
+});
+$("delete-selected").addEventListener("click", () => {
+  if (!project || !selectedId) return;
+  saveUndo();
+  const wall = project.walls.find(item => item.id === selectedId);
+  project.walls = project.walls.filter(item => item.id !== selectedId);
+  project.rooms = project.rooms.filter(item => item.id !== selectedId);
+  project.symbols = (project.symbols || []).filter(item => item.id !== selectedId);
+  project.openings = project.openings.filter(item => item.id !== selectedId && (!wall || item.wall_id !== selectedId));
+  selectedId = null;
+  showSelection();
+  refreshWallOptions();
+  render();
+  setStatus("Usunięto obiekt. Zapisz projekt, aby utrwalić zmiany.", "success");
+});
+$("undo").addEventListener("click", () => {
+  if (!undoStack.length || !project) return;
+  project = undoStack.pop();
+  selectedId = null;
+  firstPoint = null;
+  roomDraft = [];
+  $("undo").disabled = undoStack.length === 0;
+  showSelection();
+  refreshWallOptions();
+  render();
+  setStatus("Cofnięto ostatnią zmianę.");
+});
+$("save").addEventListener("click", async () => {
+  if (!project) return;
+  const errors = validateLocal();
+  if (errors.length) {
+    setStatus("Nie można zapisać:\n" + errors.join("\n"), "error");
+    return;
+  }
+  const button = $("save");
+  button.disabled = true;
+  setStatus("Walidacja i zapis projektu…");
+  try {
+    const result = await callTool("save_floorplan_project", {
+      project_id: projectId,
+      revision,
+      project_json: JSON.stringify(project)
+    });
+    revision = result.revision;
+    setStatus("Zapisano projekt na backendzie. Rewizja: " + revision.slice(0, 12) + ".", "success");
+  } catch (error) {
+    setStatus("Zapis nie powiódł się: " + error.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+});
+$("download").addEventListener("click", () => {
+  if (!project) return;
+  const blob = new Blob([JSON.stringify(project, null, 2) + "\n"], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = (projectId || "floorplan") + ".json";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setStatus("Pobrano kopię JSON.");
+});
+reloadProjects();
+</script>
+</body>
+</html>
