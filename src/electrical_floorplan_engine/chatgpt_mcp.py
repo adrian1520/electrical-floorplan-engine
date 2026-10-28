@@ -15,10 +15,10 @@ from pathlib import Path
 from typing import Any
 
 import mcp.types as types
-from fastapi.responses import JSONResponse
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import ValidationError
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from electrical_floorplan_engine.geometry import validate_geometry
 from electrical_floorplan_engine.models import FloorplanProject
@@ -95,9 +95,7 @@ def _project_and_revision(path: Path) -> tuple[FloorplanProject, bytes, str]:
 def _image_path(project: FloorplanProject, project_file: Path) -> tuple[Path, str]:
     """Require a supported raster under the workspace before returning it."""
     if not project.source_image or project.image_mm_per_pixel is None:
-        raise ToolFailure(
-            "Projekt wymaga pól source_image oraz image_mm_per_pixel (kalibracja)."
-        )
+        raise ToolFailure("Projekt wymaga pól source_image oraz image_mm_per_pixel (kalibracja).")
     source = Path(project.source_image)
     if not source.is_absolute():
         source = project_file.parent / source
@@ -348,9 +346,7 @@ async def _read_resource(request: types.ReadResourceRequest) -> types.ServerResu
     try:
         html = _WIDGET_PATH.read_text(encoding="utf-8")
     except OSError as exc:
-        return types.ServerResult(
-            types.ReadResourceResult(contents=[], _meta={"error": str(exc)})
-        )
+        return types.ServerResult(types.ReadResourceResult(contents=[], _meta={"error": str(exc)}))
     return types.ServerResult(
         types.ReadResourceResult(
             contents=[
@@ -437,21 +433,44 @@ app = mcp.streamable_http_app()
 _API_TOKEN = os.getenv("ELECTRICAL_FLOORPLAN_API_TOKEN", "")
 
 
-@app.middleware("http")
-async def require_api_token(request: Any, call_next: Any) -> Any:
-    if request.url.path.rstrip("/") == "/mcp":
-        provided = request.headers.get("authorization", "")
-        expected = f"Bearer {_API_TOKEN}"
-        if not _API_TOKEN or not hmac.compare_digest(provided, expected):
-            return JSONResponse(
-                status_code=401 if _API_TOKEN else 503,
-                content={
-                    "detail": (
-                        "MCP API token is missing or invalid."
-                        if _API_TOKEN
-                        else "Set ELECTRICAL_FLOORPLAN_API_TOKEN before exposing this endpoint."
-                    )
-                },
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-    return await call_next(request)
+class BearerTokenMiddleware:
+    """Pure ASGI auth middleware; preserves MCP streaming responses."""
+
+    def __init__(self, app: ASGIApp, token: str) -> None:
+        self.app = app
+        self.token = token
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope.get("path", "").rstrip("/") != "/mcp":
+            await self.app(scope, receive, send)
+            return
+
+        headers = dict(scope.get("headers", []))
+        provided = headers.get(b"authorization", b"").decode("latin-1")
+        expected = f"Bearer {self.token}"
+        if self.token and hmac.compare_digest(provided, expected):
+            await self.app(scope, receive, send)
+            return
+
+        detail = (
+            "MCP API token is missing or invalid."
+            if self.token
+            else "Set ELECTRICAL_FLOORPLAN_API_TOKEN before exposing this endpoint."
+        )
+        body = json.dumps({"detail": detail}).encode("utf-8")
+        response_headers = [
+            (b"content-type", b"application/json"),
+            (b"content-length", str(len(body)).encode("ascii")),
+            (b"www-authenticate", b"Bearer"),
+        ]
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 401 if self.token else 503,
+                "headers": response_headers,
+            }
+        )
+        await send({"type": "http.response.body", "body": body})
+
+
+app.add_middleware(BearerTokenMiddleware, token=_API_TOKEN)

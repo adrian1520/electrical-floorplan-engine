@@ -1,8 +1,10 @@
+import asyncio
 import base64
 import hashlib
 import json
 from pathlib import Path
 
+import httpx
 import pytest
 
 from electrical_floorplan_engine import chatgpt_mcp
@@ -45,9 +47,7 @@ def _workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def test_mcp_editor_tool_declares_inline_ui_resource() -> None:
     specs = {tool.name: tool for tool in chatgpt_mcp._tool_specs()}
-    assert specs["open_floorplan_editor"]._meta["ui"]["resourceUri"] == (
-        chatgpt_mcp.RESOURCE_URI
-    )
+    assert specs["open_floorplan_editor"]._meta["ui"]["resourceUri"] == (chatgpt_mcp.RESOURCE_URI)
     assert "project_json" in specs["save_floorplan_project"].inputSchema["properties"]
     assert getattr(specs["save_floorplan_project"].annotations, "readOnlyHint", True) is False
     assert chatgpt_mcp._WIDGET_PATH.is_file()
@@ -71,9 +71,7 @@ def test_mcp_workspace_lists_and_loads_project_with_raster(tmp_path: Path, monke
     assert loaded["image_data_url"].startswith("data:image/png;base64,")
 
 
-def test_mcp_save_requires_current_revision_and_valid_model(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_mcp_save_requires_current_revision_and_valid_model(tmp_path: Path, monkeypatch) -> None:
     _workspace(tmp_path, monkeypatch)
     loaded = chatgpt_mcp._load_project("plan")
     project = loaded["project"]
@@ -98,9 +96,7 @@ def test_mcp_save_requires_current_revision_and_valid_model(
         chatgpt_mcp._save_project("plan", saved["revision"], json.dumps(project))
 
 
-def test_mcp_rejects_paths_outside_workspace(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_mcp_rejects_paths_outside_workspace(tmp_path: Path, monkeypatch) -> None:
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     secret_image = tmp_path / "outside.png"
@@ -121,9 +117,7 @@ def test_mcp_rejects_paths_outside_workspace(
         chatgpt_mcp._load_project("plan")
 
 
-def test_mcp_geometry_validation_returns_warnings(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_mcp_geometry_validation_returns_warnings(tmp_path: Path, monkeypatch) -> None:
     _workspace(tmp_path, monkeypatch)
     project = json.loads((tmp_path / "plan.json").read_text(encoding="utf-8"))
     project["walls"].append(
@@ -140,3 +134,30 @@ def test_mcp_geometry_validation_returns_warnings(
 
     assert result["valid"] is True
     assert result["issues"][0]["code"] == "crossing_walls"
+
+
+def test_bearer_middleware_requires_token_and_preserves_other_paths() -> None:
+    async def downstream(scope, receive, send) -> None:
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 204,
+                "headers": [],
+            }
+        )
+        await send({"type": "http.response.body", "body": b""})
+
+    protected_app = chatgpt_mcp.BearerTokenMiddleware(downstream, token="test-secret")
+
+    async def exercise() -> tuple[int, int, int, int]:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=protected_app),
+            base_url="http://testserver",
+        ) as client:
+            missing = await client.get("/mcp")
+            wrong = await client.get("/mcp", headers={"Authorization": "Bearer wrong"})
+            valid = await client.get("/mcp", headers={"Authorization": "Bearer test-secret"})
+            outside = await client.get("/health")
+        return missing.status_code, wrong.status_code, valid.status_code, outside.status_code
+
+    assert asyncio.run(exercise()) == (401, 401, 204, 204)
