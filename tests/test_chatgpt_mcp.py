@@ -47,13 +47,14 @@ def _workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def test_mcp_editor_tool_declares_inline_ui_resource() -> None:
     specs = {tool.name: tool for tool in chatgpt_mcp._tool_specs()}
-    assert specs["open_floorplan_editor"]._meta["ui"]["resourceUri"] == (chatgpt_mcp.RESOURCE_URI)
+    tool_meta = specs["open_floorplan_editor"].model_dump(by_alias=True).get("_meta", {})
+    assert tool_meta["ui"]["resourceUri"] == chatgpt_mcp.RESOURCE_URI
     assert "project_json" in specs["save_floorplan_project"].inputSchema["properties"]
     assert getattr(specs["save_floorplan_project"].annotations, "readOnlyHint", True) is False
     assert chatgpt_mcp._WIDGET_PATH.is_file()
     html = chatgpt_mcp._WIDGET_PATH.read_text(encoding="utf-8")
-    assert 'ui/initialize' in html
-    assert 'tools/call' in html
+    assert "ui/initialize" in html
+    assert "tools/call" in html
     assert "save_floorplan_project" in html
 
 
